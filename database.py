@@ -2,7 +2,7 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
-from models import Base, User, Course, ChatHistory
+from models import Base, User, Course, ChatHistory, QuizResult
 
 load_dotenv()
 
@@ -49,3 +49,16 @@ def delete_course(db, course_id):
         db.commit()
         return True
     return False
+
+def add_quiz_result(db, quiz_title, student_name, score):
+    result = QuizResult(quiz_title=quiz_title, student_name=student_name, score=score)
+    db.add(result)
+    db.commit()
+    db.refresh(result)
+    return result
+
+def get_quiz_results(db, quiz_title=None):
+    query = db.query(QuizResult)
+    if quiz_title:
+        query = query.filter(QuizResult.quiz_title == quiz_title)
+    return query.order_by(QuizResult.created_at.desc()).all()

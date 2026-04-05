@@ -166,6 +166,14 @@ st.markdown(f"""
         line-height: 1.55;
         color: rgba(226,232,240,0.9);
     }}
+    .dash-section {{
+        background: var(--secondary-background-color);
+        border: 1px solid var(--divider-color);
+        border-radius: 16px;
+        padding: 1.1rem 1.15rem 1.15rem;
+        margin-bottom: 0.85rem;
+    }}
+    .dash-section h4 {{ margin: 0 0 0.65rem; font-size: 0.95rem; font-weight: 650; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -188,33 +196,98 @@ with st.sidebar:
 
 # --- PAGES ---
 if st.session_state.page == "Ana Sayfa":
-    db_gen = get_db(); db = next(db_gen); courses = get_all_courses(db); history = get_chat_history(db)
+    db_gen = get_db(); db = next(db_gen)
+    courses = get_all_courses(db)
+    history = get_chat_history(db)
+    quiz_res = get_quiz_results(db)
+
+    n_courses = len(courses)
+    n_user_msgs = sum(1 for h in history if h.role == "user")
+    n_assist_msgs = sum(1 for h in history if h.role == "assistant")
+    n_quiz_rows = len(quiz_res)
+    avg_score = round(sum(r.score for r in quiz_res) / n_quiz_rows, 1) if n_quiz_rows else None
+    default_ai = st.session_state.get("default_model", "Groq")
+
     st.markdown("""
 <div class="home-hero">
   <div class="home-hero-inner">
-    <p class="home-hero-kicker">Kurumsal öğrenme</p>
-    <h1 class="home-hero-title">LMS Yapay Zeka Pro</h1>
-    <p class="home-hero-lead">Ders arşivi, yapay zeka destekli sohbet ve sınav analizi — tek panelde, tutarlı bir deneyim.</p>
+    <p class="home-hero-kicker">Gösterge paneli</p>
+    <h1 class="home-hero-title">Özet ekran</h1>
+    <p class="home-hero-lead">Dersler, AI sohbet ve sınav verilerinizin anlık özeti; detay için menüden ilgili modüle geçin.</p>
   </div>
 </div>
 """, unsafe_allow_html=True)
-    st.markdown("### Sistem İstatistikleri")
-    sc1, sc2, sc3, sc4 = st.columns(4)
-    with sc1: st.markdown(f'<div class="stat-box"><div class="stat-val">{len(courses)}</div><div class="stat-lab">Arşiv</div></div>', unsafe_allow_html=True)
-    with sc2: st.markdown(f'<div class="stat-box"><div class="stat-val">{len(history)}</div><div class="stat-lab">AI Yanıtı</div></div>', unsafe_allow_html=True)
-    with sc3: st.markdown(f'<div class="stat-box"><div class="stat-val">Online</div><div class="stat-lab">Durum</div></div>', unsafe_allow_html=True)
-    
-    st.divider(); st.markdown("### Hizmet Paneli")
-    nc1, nc2, nc3 = st.columns(3)
+
+    st.markdown("### Özet metrikler")
+    r1, r2, r3, r4, r5 = st.columns(5)
+    r1.metric("Kayıtlı ders", n_courses, help="Ders materyalleri arşivindeki kayıt sayısı")
+    r2.metric("Kullanıcı mesajı", n_user_msgs, help="AI sohbetinde gönderilen mesaj adedi")
+    r3.metric("AI yanıtı", n_assist_msgs, help="Asistan tarafından üretilen yanıt adedi")
+    r4.metric("Sınav kayıtları", n_quiz_rows, help="Veritabanındaki sınav sonucu satırı")
+    r5.metric("Ortalama puan", f"{avg_score}" if avg_score is not None else "—", help="Tüm sınav sonuçlarının ortalaması")
+
+    st.caption(f"Varsayılan AI modeli: **{default_ai}** · Sohbet toplam mesaj: **{len(history)}**")
+
+    st.markdown("### Görünümler")
+    g1, g2 = st.columns(2)
+    with g1:
+        st.markdown('<div class="dash-section"><h4>Son sınav puanları</h4>', unsafe_allow_html=True)
+        if quiz_res:
+            take = quiz_res[:18]
+            chart_df = pd.DataFrame({
+                "Kayıt": [f"{i+1}" for i in range(len(take))],
+                "Puan": [r.score for r in take],
+            }).set_index("Kayıt")
+            st.bar_chart(chart_df, color=accent)
+        else:
+            st.caption("Henüz sınav sonucu yok. Quiz veya Veri Analizi ile kayıt ekleyin.")
+        st.markdown("</div>", unsafe_allow_html=True)
+    with g2:
+        st.markdown('<div class="dash-section"><h4>Son sınav kayıtları</h4>', unsafe_allow_html=True)
+        if quiz_res:
+            tail = quiz_res[:8]
+            st.dataframe(
+                pd.DataFrame([{
+                    "Ders": r.quiz_title[:40] + ("…" if len(r.quiz_title) > 40 else ""),
+                    "Öğrenci": r.student_name,
+                    "Puan": r.score,
+                } for r in tail]),
+                use_container_width=True,
+                hide_index=True,
+            )
+        else:
+            st.caption("Gösterilecek kayıt yok.")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("### Son sohbet (özet)")
+    st.markdown('<div class="dash-section"><h4>İlk mesaj önizlemeleri</h4>', unsafe_allow_html=True)
+    tail_chat = history[-6:]
+    if tail_chat:
+        for h in tail_chat:
+            role = "Siz" if h.role == "user" else "AI"
+            preview = h.message.replace("\n", " ")
+            if len(preview) > 140:
+                preview = preview[:140] + "…"
+            st.markdown(f"**{role}** · {preview}")
+    else:
+        st.caption("Henüz sohbet geçmişi yok. AI Sohbet sayfasından başlayın.")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.divider()
+    st.markdown("### Hızlı erişim")
+    nc1, nc2, nc3, nc4 = st.columns(4)
     with nc1:
-        st.markdown('<div class="nav-card"><h3>💬 Sohbet</h3><p style="opacity:0.7;">AI ile anında bilgi alın.</p></div>', unsafe_allow_html=True)
-        if st.button("AI Sohbet Paneli", use_container_width=True, key="nh_chat"): navigate_to("AI Sohbet")
+        st.markdown('<div class="nav-card"><h3>AI Sohbet</h3><p style="opacity:0.7;">Model ile mesajlaşın.</p></div>', unsafe_allow_html=True)
+        if st.button("Sohbete git", use_container_width=True, key="nh_chat"): navigate_to("AI Sohbet")
     with nc2:
-        st.markdown('<div class="nav-card"><h3>📝 Sınav</h3><p style="opacity:0.7;">Quizler hazırlayın.</p></div>', unsafe_allow_html=True)
-        if st.button("Hemen Quiz Hazırla", use_container_width=True, key="nh_quiz"): navigate_to("Quiz Hazirla")
+        st.markdown('<div class="nav-card"><h3>Dersler</h3><p style="opacity:0.7;">Materyal arşivi.</p></div>', unsafe_allow_html=True)
+        if st.button("Arşive git", use_container_width=True, key="nh_mat"): navigate_to("Ders Materyalleri")
     with nc3:
-        st.markdown('<div class="nav-card"><h3>📊 Analiz</h3><p style="opacity:0.7;">Başarı takibi.</p></div>', unsafe_allow_html=True)
-        if st.button("Verileri İncele", use_container_width=True, key="nh_ana"): navigate_to("Veri Analizi")
+        st.markdown('<div class="nav-card"><h3>Quiz</h3><p style="opacity:0.7;">Sınav üretin.</p></div>', unsafe_allow_html=True)
+        if st.button("Quiz’e git", use_container_width=True, key="nh_quiz"): navigate_to("Quiz Hazirla")
+    with nc4:
+        st.markdown('<div class="nav-card"><h3>Analiz</h3><p style="opacity:0.7;">Grafik ve tablolar.</p></div>', unsafe_allow_html=True)
+        if st.button("Analize git", use_container_width=True, key="nh_ana"): navigate_to("Veri Analizi")
 
 elif st.session_state.page == "AI Sohbet":
     st.title("AI Eğitmen Asistanı")

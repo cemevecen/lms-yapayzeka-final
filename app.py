@@ -103,6 +103,69 @@ st.markdown(f"""
     }}
     .nav-card:hover {{ transform: translateY(-10px); border-color: {accent}; box-shadow: 0 12px 24px rgba(0,0,0,0.1); }}
     .stButton>button {{ border-radius: 12px; font-weight: 600; transition: all 0.2s; border: 1px solid {accent}; }}
+    .home-hero {{
+        position: relative;
+        border-radius: 20px;
+        overflow: hidden;
+        min-height: 220px;
+        padding: 2.5rem 2.25rem 2.35rem;
+        margin-bottom: 1.35rem;
+        color: #f8fafc;
+        background-color: #0f172a;
+        background-image:
+            radial-gradient(ellipse 90% 65% at 15% 25%, rgba(30, 64, 175, 0.22) 0%, transparent 52%),
+            radial-gradient(ellipse 70% 50% at 88% 75%, rgba(15, 23, 42, 0.95) 0%, transparent 55%),
+            repeating-linear-gradient(
+                -12deg,
+                transparent,
+                transparent 8px,
+                rgba(255,255,255,0.028) 8px,
+                rgba(255,255,255,0.028) 9px
+            ),
+            linear-gradient(168deg, #0c1222 0%, #152238 38%, #0f172a 72%, #0b1120 100%);
+        box-shadow: 0 22px 44px -18px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.08);
+    }}
+    .home-hero::before {{
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.045) 1px, transparent 0);
+        background-size: 20px 20px;
+        opacity: 0.85;
+        pointer-events: none;
+    }}
+    .home-hero::after {{
+        content: "";
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        height: 3px;
+        background: linear-gradient(90deg, transparent 5%, {accent} 50%, transparent 95%);
+        opacity: 0.92;
+    }}
+    .home-hero-inner {{ position: relative; z-index: 1; max-width: 46rem; }}
+    .home-hero-kicker {{
+        margin: 0 0 0.4rem;
+        font-size: 0.7rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: rgba(248,250,252,0.72);
+        font-weight: 600;
+    }}
+    .home-hero-title {{
+        margin: 0;
+        font-size: clamp(1.4rem, 3.2vw, 1.95rem);
+        font-weight: 780;
+        letter-spacing: -0.035em;
+        color: #fff;
+        line-height: 1.2;
+    }}
+    .home-hero-lead {{
+        margin: 0.9rem 0 0;
+        font-size: 1.02rem;
+        line-height: 1.55;
+        color: rgba(226,232,240,0.9);
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -126,7 +189,15 @@ with st.sidebar:
 # --- PAGES ---
 if st.session_state.page == "Ana Sayfa":
     db_gen = get_db(); db = next(db_gen); courses = get_all_courses(db); history = get_chat_history(db)
-    if os.path.exists("banner.png"): st.image("banner.png", use_container_width=True)
+    st.markdown("""
+<div class="home-hero">
+  <div class="home-hero-inner">
+    <p class="home-hero-kicker">Kurumsal öğrenme</p>
+    <h1 class="home-hero-title">LMS Yapay Zeka Pro</h1>
+    <p class="home-hero-lead">Ders arşivi, yapay zeka destekli sohbet ve sınav analizi — tek panelde, tutarlı bir deneyim.</p>
+  </div>
+</div>
+""", unsafe_allow_html=True)
     st.markdown("### Sistem İstatistikleri")
     sc1, sc2, sc3, sc4 = st.columns(4)
     with sc1: st.markdown(f'<div class="stat-box"><div class="stat-val">{len(courses)}</div><div class="stat-lab">Arşiv</div></div>', unsafe_allow_html=True)

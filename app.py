@@ -5,7 +5,10 @@ from ai_service import ai_service
 import os
 import io
 from datetime import datetime
-from xhtml2pdf import pisa
+try:
+    from xhtml2pdf import pisa
+except ImportError:
+    pisa = None
 
 # Page Configuration
 st.set_page_config(page_title="LMS Yapay Zeka Final", page_icon=None, layout="wide", initial_sidebar_state="expanded")
@@ -63,6 +66,9 @@ def export_excel(courses):
     return output.getvalue()
 
 def export_pdf(courses):
+    if pisa is None:
+        raise ImportError("PDF motoru (xhtml2pdf) henuz yuklenmedi. Lutfen 1-2 dakika bekleyip sayfayi yenileyin.")
+    
     html = f"""
     <html>
     <head>

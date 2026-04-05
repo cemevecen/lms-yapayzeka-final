@@ -7,3 +7,4 @@ groq
 fpdf2
 openpyxl
 xhtml2pdf
+# Force Rebuild Trigger: 2026-04-05

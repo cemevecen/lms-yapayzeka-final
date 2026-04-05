@@ -63,6 +63,14 @@ with st.sidebar:
     st.divider()
 
 # --- HELPERS ---
+def simulate_students_data(quiz_title="Genel Değerlendirme"):
+    student_names = ["Ahmet", "Fatma", "Can", "Selin", "Burak", "Elif", "Mehmet", "Ayşe", "Deniz", "Zeynep", "Emir", "Melis", "Okan", "Gizem", "Arda"]
+    db_gen = get_db(); db = next(db_gen)
+    for name in student_names:
+        score = random.randint(72, 100) # Successful class simulation
+        add_quiz_result(db, quiz_title, name, score)
+    return True
+
 def tr_fix(text):
     c = {"ğ": "g", "Ğ": "G", "ı": "i", "İ": "I", "ş": "s", "Ş": "S", "ü": "u", "Ü": "U", "ö": "o", "Ö": "O", "ç": "c", "Ç": "C"}
     for k, v in c.items(): text = text.replace(k, v)
@@ -75,31 +83,23 @@ def export_pdf(content, title="Rapor"):
     pdf.set_font("helvetica", size=11); pdf.multi_cell(0, 10, txt=tr_fix(content))
     return pdf.output()
 
-def simulate_students(quiz_title):
-    student_names = ["Ali", "Ayşe", "Mehmet", "Fatma", "Can", "Zeynep", "Burak", "Selin", "Deniz", "Elif", "Emir", "Melis", "Okan", "Gizem", "Arda"]
-    db_gen = get_db(); db = next(db_gen)
-    for name in student_names:
-        score = random.randint(60, 100) # Slightly skewed to success
-        add_quiz_result(db, quiz_title, name, score)
-    return True
-
 # --- PAGES ---
 if st.session_state.page == "Ana Sayfa":
     db_gen = get_db(); db = next(db_gen); courses = get_all_courses(db); history = get_chat_history(db)
     st.markdown(f'<div style="text-align:center; padding:20px 0;"><h1 style="font-size:3rem; margin-bottom:0; color:{accent};">LMS Yapay Zeka Final</h1><p style="font-size:1.2rem; opacity:0.8;">Premium AI Analitik Eğitim Deneyimi</p></div>', unsafe_allow_html=True)
     col1, col2, col3, col4 = st.columns(4)
     with col1: st.markdown(f'<div class="stat-card"><div class="stat-value">{len(courses)}</div><div class="stat-label">Dersler</div></div>', unsafe_allow_html=True)
-    with col2: st.markdown(f'<div class="stat-card"><div class="stat-value">{len(history)}</div><div class="stat-label">AI Yanıtları</div></div>', unsafe_allow_html=True)
-    with col3: st.markdown('<div class="stat-card"><div class="stat-value">15</div><div class="stat-label">Aktif Öğrenci</div></div>', unsafe_allow_html=True)
-    with col4: st.markdown('<div class="stat-card"><div class="stat-value">Kararlı</div><div class="stat-label">Sistem Durumu</div></div>', unsafe_allow_html=True)
+    with col2: st.markdown(f'<div class="stat-card"><div class="stat-value">{len(history)}</div><div class="stat-label">AI Mesajları</div></div>', unsafe_allow_html=True)
+    with col3: st.markdown('<div class="stat-card"><div class="stat-value">15</div><div class="stat-label">Öğrenci Kapasitesi</div></div>', unsafe_allow_html=True)
+    with col4: st.markdown('<div class="stat-card"><div class="stat-value">Kararlı</div><div class="stat-label">Sistem</div></div>', unsafe_allow_html=True)
     st.divider(); st.markdown("### Hızlı Kısayollar")
-    c1, c2, c3 = st.columns(3)
+    c1, c2, c3 = st.columns(3);
     with c1: 
-        if st.button("AI Sohbet", use_container_width=True): navigate_to("AI Sohbet")
+        if st.button("AI Sohbet Paneli", use_container_width=True): navigate_to("AI Sohbet")
     with c2: 
-        if st.button("Sınav Hazırla", use_container_width=True): navigate_to("Quiz Hazirla")
+        if st.button("Hemen Quiz Hazırla", use_container_width=True): navigate_to("Quiz Hazirla")
     with c3: 
-        if st.button("Veri Analizi", use_container_width=True): navigate_to("Veri Analizi")
+        if st.button("Veri Analizini Gör", use_container_width=True): navigate_to("Veri Analizi")
 
 elif st.session_state.page == "AI Sohbet":
     st.title("AI Eğitmen Asistanı")
@@ -108,7 +108,7 @@ elif st.session_state.page == "AI Sohbet":
     db_gen = get_db(); db = next(db_gen); history = get_chat_history(db)
     for chat in history[-10:]:
         with st.chat_message(chat.role): st.markdown(chat.message)
-    if pr := st.chat_input("Dersinle ilgili sor..."):
+    if pr := st.chat_input("Mesajınızı yazın..."):
         with st.chat_message("user"): st.markdown(pr)
         add_chat_message(db, "user", pr, ai_p)
         with st.chat_message("assistant"):
@@ -120,23 +120,17 @@ elif st.session_state.page == "Quiz Hazirla":
     c1, c2 = st.columns([0.7, 0.3])
     with c1: topic = st.text_input("Konu", placeholder="Ör: Fotosentez")
     with c2: q_count = st.slider("Adet", 3, 20, 5)
-    model = st.selectbox("Model", ["Groq", "Gemini"], index=0 if st.session_state.default_model=="Groq" else 1)
+    model = st.selectbox("Model Seçimi", ["Groq", "Gemini"], index=0 if st.session_state.default_model=="Groq" else 1)
     if st.button("Sınavı Oluştur", use_container_width=True, type="primary"):
         if topic:
-            with st.spinner("AI Sınav Hazırlıyor..."):
-                st.session_state.quiz_content = ai_service.ask(f"'{topic}' hakkında {q_count} soruluk bir test hazırla.", provider=model.lower(), temp=st.session_state.ai_temp, tokens=st.session_state.ai_tokens)
+            with st.spinner("AI Hazırlıyor..."):
+                st.session_state.quiz_content = ai_service.ask(f"{topic} hakkında {q_count} soruluk bir test hazırla.", provider=model.lower(), temp=st.session_state.ai_temp, tokens=st.session_state.ai_tokens)
                 st.session_state.current_quiz_title = topic
-        else: st.error("Bir konu girin.")
+        else: st.error("Lütfen bir konu girin.")
     st.markdown('</div>', unsafe_allow_html=True)
     if st.session_state.quiz_content:
         st.markdown('<div class="settings-card">', unsafe_allow_html=True); st.markdown(st.session_state.quiz_content)
-        col_pdf, col_sim = st.columns(2)
-        with col_pdf: st.download_button("PDF İndir", bytes(export_pdf(st.session_state.quiz_content, title=f"SINAV: {st.session_state.current_quiz_title}")), file_name="sinav.pdf", use_container_width=True)
-        with col_sim:
-            if st.button("15 Öğrenciye Çözdür (Simülasyon)", use_container_width=True):
-                if simulate_students(st.session_state.current_quiz_title):
-                    st.success("15 öğrenci sınavı başarıyla tamamladı! Sonuçlar Analiz sayfasına yüklendi.")
-                    st.balloons()
+        st.download_button("Sınavı PDF İndir", bytes(export_pdf(st.session_state.quiz_content, title=f"SINAV: {st.session_state.current_quiz_title}")), file_name="sinav.pdf", use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.page == "Ders Materyalleri":
@@ -150,10 +144,6 @@ elif st.session_state.page == "Ders Materyalleri":
                     with st.expander(c.title, expanded=st.session_state.course_expanded): st.write(c.content)
                 with col2:
                     if st.button("Sil", key=f"del_{c.id}", type="primary"): delete_course(db, c.id); st.rerun()
-    with tab2:
-        with st.form("new_c"):
-            t = st.text_input("Başlık"); d = st.text_area("Açıklama"); c = st.text_area("İçerik"); sub = st.form_submit_button("Kaydet")
-            if sub and t and c: add_sample_course(db, t, d, c); st.success("Eklendi!"); st.rerun()
 
 elif st.session_state.page == "Veri Analizi":
     st.title("Gelişmiş Veri Analizi"); db_gen = get_db(); db = next(db_gen)
@@ -165,34 +155,32 @@ elif st.session_state.page == "Veri Analizi":
         if courses:
             c_df = pd.DataFrame({'Ders': [c.title for c in courses], 'Uzunluk': [len(c.content) for c in courses]})
             st.bar_chart(data=c_df, x='Ders', y='Uzunluk', color=accent)
+        else: st.info("Sistemde henüz ders verisi yok.")
     with t2:
         st.subheader("Öğrenci Performans Tablosu")
         if quiz_res:
-            res_df = pd.DataFrame([{"Öğrenci": r.student_name, "Sınav": r.quiz_title, "Puan": r.score, "Tarih": r.created_at.strftime("%d/%m %H:%M")} for r in quiz_res])
-            
-            # Key Metrics
+            res_df = pd.DataFrame([{"Öğrenci": r.student_name, "Puan": r.score, "Tarih": r.created_at.strftime("%d/%m %H:%M")} for r in quiz_res])
             m1, m2, m3 = st.columns(3)
             m1.metric("Sınıf Ortalaması", round(res_df["Puan"].mean(), 1))
-            m2.metric("En Yüksek Puan", res_df["Puan"].max())
-            m3.metric("En Düşük Puan", res_df["Puan"].min())
-            
+            m2.metric("En Yüksek", res_df["Puan"].max()); m3.metric("En Düşük", res_df["Puan"].min())
             st.markdown('<div class="settings-card">', unsafe_allow_html=True)
-            st.write("**Puan Dağılım Grafiği**")
             st.line_chart(res_df.set_index("Öğrenci")["Puan"], color=accent)
             st.markdown('</div>', unsafe_allow_html=True)
-            
             st.dataframe(res_df, use_container_width=True)
-        else: st.info("Henüz simüle edilmiş veya tamamlanmış bir sınav sonucu bulunmuyor.")
+        else:
+            st.info("Henüz sınav sonucu bulunamadı.")
+            if st.button("15 Öğrenci Simülasyonunu Hemen Başlat", type="primary", use_container_width=True):
+                if simulate_students_data(): st.success("15 öğrenci verisi yüklendi!"); st.rerun()
 
 elif st.session_state.page == "Ayarlar":
     st.title("Gelişmiş Ayarlar")
-    st.markdown('<div class="settings-card"><h4>Kişiselleştirme</h4>', unsafe_allow_html=True)
+    st.markdown('<div class="settings-card"><h4>AI & Görünüm</h4>', unsafe_allow_html=True)
     st.session_state.ai_temp = st.slider("Temperature", 0.0, 1.0, st.session_state.ai_temp, 0.1)
     color_map = {"Mavi": "#1f77b4", "Yeşil": "#2ecc71", "Mor": "#9b59b6", "Turuncu": "#e67e22"}
-    sel_c = st.selectbox("Renk", list(color_map.keys()), index=list(color_map.values()).index(st.session_state.ui_accent))
+    sel_c = st.selectbox("Tema Rengi", list(color_map.keys()), index=list(color_map.values()).index(st.session_state.ui_accent))
     if color_map[sel_c] != st.session_state.ui_accent: st.session_state.ui_accent = color_map[sel_c]; st.rerun()
     if st.button("Ayarları Kaydet", type="primary", use_container_width=True):
         save_settings_to_disk({'ui_accent': st.session_state.ui_accent, 'ai_temp': st.session_state.ai_temp, 'ai_tokens': st.session_state.ai_tokens, 'default_model': st.session_state.default_model, 'course_expanded': st.session_state.course_expanded, 'pdf_pagenums': st.session_state.pdf_pagenums})
-        st.success("Kaydedildi!"); st.balloons()
-    if st.button("Verileri Sıfırla"):
+        st.success("Tüm ayarlar kaydedildi!"); st.balloons()
+    if st.button("Sistemi Tamamen Sıfırla"):
         db_gen = get_db(); db = next(db_gen); from sqlalchemy import delete; from models import Course, ChatHistory, QuizResult; db.execute(delete(Course)); db.execute(delete(ChatHistory)); db.execute(delete(QuizResult)); db.commit(); st.rerun()

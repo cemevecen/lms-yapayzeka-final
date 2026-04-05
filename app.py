@@ -176,7 +176,7 @@ elif st.session_state.page == "Ders Materyalleri":
                 st.download_button(label="Excel Olarak Indir", data=excel_data, file_name=f"dersler_{datetime.now().strftime('%d%m%y')}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
             with ecol2:
                 try:
-                    pdf_data = export_pdf(courses)
+                    pdf_data = bytes(export_pdf(courses))
                     st.download_button(label="PDF Olarak Indir", data=pdf_data, file_name=f"dersler_{datetime.now().strftime('%d%m%y')}.pdf", mime="application/pdf", key="pdf_dl", use_container_width=True)
                 except Exception as e:
                     st.error(f"PDF Olusturma Hatasi: {str(e)}")

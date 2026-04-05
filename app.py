@@ -5,10 +5,7 @@ from ai_service import ai_service
 import os
 import io
 from datetime import datetime
-try:
-    from xhtml2pdf import pisa
-except ImportError:
-    pisa = None
+from fpdf import FPDF
 
 # Page Configuration
 st.set_page_config(page_title="LMS Yapay Zeka Final", page_icon=None, layout="wide", initial_sidebar_state="expanded")
@@ -54,12 +51,18 @@ st.markdown("""
 pages = ["Ana Sayfa", "AI Sohbet", "Ders Materyalleri", "Quiz Hazirla", "Veri Analizi", "Ayarlar"]
 with st.sidebar:
     st.title("AI-LMS Dashboard"); st.divider()
-    current_index = pages.index(st.session_state.page)
-    selected_page = st.radio("Navigasyon", pages, index=current_index)
-    if selected_page != st.session_state.page: st.session_state.page = selected_page; st.rerun()
+    curr_idx = pages.index(st.session_state.page)
+    sel_page = st.radio("Navigasyon", pages, index=curr_idx)
+    if sel_page != st.session_state.page: st.session_state.page = sel_page; st.rerun()
     st.divider()
 
 # --- HELPERS ---
+def tr_fix(text):
+    """Fallback: Replaces Turkish characters if PDF font doesn't support them."""
+    chars = {"ğ": "g", "Ğ": "G", "ı": "i", "İ": "I", "ş": "s", "Ş": "S", "ü": "u", "Ü": "U", "ö": "o", "Ö": "O", "ç": "c", "Ç": "C"}
+    for k, v in chars.items(): text = text.replace(k, v)
+    return text
+
 def export_excel(courses):
     df = pd.DataFrame([{"Baslik": c.title, "Aciklama": c.description, "Icerik": c.content} for c in courses])
     output = io.BytesIO()
@@ -67,15 +70,19 @@ def export_excel(courses):
     return output.getvalue()
 
 def export_pdf(content, title="Rapor"):
-    if pisa is None: return None
-    html = f"<html><head><meta charset='UTF-8'><style>body {{ font-family: Helvetica, Arial, sans-serif; padding: 30px; }} h1 {{ color: #1f77b4; text-align: center; }} .content {{ line-height: 1.6; font-size: 12px; white-space: pre-wrap; }}</style></head><body><h1>{title}</h1><hr><div class='content'>{content}</div></body></html>"
-    result = io.BytesIO()
-    pisa.CreatePDF(io.BytesIO(html.encode("UTF-8")), dest=result, encoding='UTF-8')
-    return result.getvalue()
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("helvetica", style='B', size=16)
+    # Clean text to avoid encoding errors on standard PDF fonts
+    pdf.cell(200, 10, txt=tr_fix(title), ln=True, align='C')
+    pdf.ln(10)
+    pdf.set_font("helvetica", size=12)
+    pdf.multi_cell(0, 10, txt=tr_fix(content))
+    return pdf.output()
 
 # --- PAGE: HOME ---
 if st.session_state.page == "Ana Sayfa":
-    st.markdown('<div style="text-align: center; padding: 20px 0;"><h1 style="font-size: 3rem; margin-bottom:0;">LMS Yapay Zeka Final</h1><p style="font-size: 1.2rem; opacity: 0.8;">Eğitimde Yeni Nesil Yapay Zeka Deneyimi</p></div>', unsafe_allow_html=True)
+    st.markdown('<div style="text-align: center; padding: 20px 0;"><h1 style="font-size: 3rem; margin-bottom:0;">LMS Yapay Zeka Final</h1><p style="font-size: 1.2rem; opacity: 0.8;">Yapay Zeka Destekli Yeni Nesil Eğitim</p></div>', unsafe_allow_html=True)
     col1, col2, col3, col4 = st.columns(4)
     with col1: st.markdown('<div class="stat-card"><div class="stat-value">12</div><div class="stat-label">Ders Sayısı</div></div>', unsafe_allow_html=True)
     with col2: st.markdown('<div class="stat-card"><div class="stat-value">156</div><div class="stat-label">Öğrenci</div></div>', unsafe_allow_html=True)
@@ -84,22 +91,18 @@ if st.session_state.page == "Ana Sayfa":
     st.divider(); st.markdown("### Platform Özellikleri")
     fcol1, fcol2, fcol3 = st.columns(3)
     with fcol1:
-        st.markdown('<div class="feature-card"><h4>Akıllı Sohbet</h4><p style="font-size:0.8rem; opacity:0.8;">AI ile anlık soru-cevap.</p></div>', unsafe_allow_html=True)
-        if st.button("Sohbete Başla", use_container_width=True, key="h_go_chat"): navigate_to("AI Sohbet")
+        st.markdown('<div class="feature-card"><h4>Akıllı Sohbet</h4><p style="font-size:0.8rem; opacity:0.8;">Anlık AI asistanlığı.</p></div>', unsafe_allow_html=True)
+        if st.button("Sohbete Başla", use_container_width=True, key="h_chat"): navigate_to("AI Sohbet")
     with fcol2:
-        st.markdown('<div class="feature-card"><h4>Quiz Hazırlayıcı</h4><p style="font-size:0.8rem; opacity:0.8;">Saniyeler içinde sınav hazırlayın.</p></div>', unsafe_allow_html=True)
-        if st.button("Sınav Hazırla", use_container_width=True, key="h_go_quiz"): navigate_to("Quiz Hazirla")
+        st.markdown('<div class="feature-card"><h4>Quiz Hazırlayıcı</h4><p style="font-size:0.8rem; opacity:0.8;">Hızlı sınavlar oluşturun.</p></div>', unsafe_allow_html=True)
+        if st.button("Hemen Hazırla", use_container_width=True, key="h_quiz"): navigate_to("Quiz Hazirla")
     with fcol3:
-        st.markdown('<div class="feature-card"><h4>Ders Arşivi</h4><p style="font-size:0.8rem; opacity:0.8;">Tüm içerikleri yönetin.</p></div>', unsafe_allow_html=True)
-        if st.button("Dersleri Gör", use_container_width=True, key="h_go_courses"): navigate_to("Ders Materyalleri")
+        st.markdown('<div class="feature-card"><h4>Ders Arşivi</h4><p style="font-size:0.8rem; opacity:0.8;">İçerikleri yönetin.</p></div>', unsafe_allow_html=True)
+        if st.button("Derslere Git", use_container_width=True, key="h_course"): navigate_to("Ders Materyalleri")
 
 # --- PAGE: AI CHAT ---
 elif st.session_state.page == "AI Sohbet":
     st.title("AI Egitmen Asistani")
-    c1, c2 = st.columns([0.8, 0.2])
-    with c2: 
-        if st.button("Temizle", use_container_width=True):
-            db_gen = get_db(); db = next(db_gen); from sqlalchemy import delete; from models import ChatHistory; db.execute(delete(ChatHistory)); db.commit(); st.rerun()
     use_groq = st.toggle("Groq Modu", value=True)
     ai_provider = "Groq" if use_groq else "Gemini"
     db_gen = get_db(); db = next(db_gen); history = get_chat_history(db)
@@ -117,21 +120,19 @@ elif st.session_state.page == "Quiz Hazirla":
     st.title("AI Sinav Hazirlayici")
     st.markdown('<div class="settings-card">', unsafe_allow_html=True)
     col1, col2 = st.columns([0.7, 0.3])
-    with col1: topic = st.text_input("Konu", placeholder="Ör: Fotosentez")
+    with col1: topic = st.text_input("Konu Girin", placeholder="Ör: Fotosentez")
     with col2: q_count = st.slider("Adet", 3, 15, 5)
-    provider = st.selectbox("Model", ["Groq", "Gemini"])
+    model = st.selectbox("Model", ["Groq", "Gemini"])
     if st.button("Sinavi Olustur", use_container_width=True, type="primary"):
         if topic:
             with st.spinner("Sorular hazirlaniyor..."):
-                st.session_state.quiz_content = ai_service.ask(f"{topic} konusu hakkinda {q_count} adet coktan secmeli soru iceren bir sinav hazirla. Secenekler ve cevaplar olsun. Turkce.", provider=provider.lower())
+                st.session_state.quiz_content = ai_service.ask(f"{topic} konusu hakkinda {q_count} adet coktan secmeli soru iceren bir sinav hazirla. Secenekler ve cevap anahtari en sonda olsun. Turkce.", provider=model.lower())
         else: st.error("Bir konu girin.")
     st.markdown('</div>', unsafe_allow_html=True)
     if st.session_state.quiz_content:
         st.markdown('<div class="settings-card">', unsafe_allow_html=True); st.markdown(st.session_state.quiz_content)
-        if pisa:
-            pdf = export_pdf(st.session_state.quiz_content, title=f"SINAV: {topic.upper()}")
-            st.download_button("PDF İndir", pdf, file_name=f"sinav.pdf", mime="application/pdf", use_container_width=True)
-        else: st.warning("PDF motoru kuruluyor, bekleyin...")
+        pdf = bytes(export_pdf(st.session_state.quiz_content, title=f"SINAV: {topic.upper()}"))
+        st.download_button("PDF İndir", pdf, file_name=f"sinav.pdf", mime="application/pdf", use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
 # --- PAGE: COURSES ---
@@ -141,27 +142,18 @@ elif st.session_state.page == "Ders Materyalleri":
         courses = get_all_courses(db)
         if courses:
             st.markdown('<div class="settings-card" style="padding:15px; margin-bottom:20px;">', unsafe_allow_html=True)
-            ec1, ec2 = st.columns(2)
-            with ec1:
-                excel = export_excel(courses); st.download_button("Excel İndir", excel, "dersler.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
-            with ec2:
-                if pisa:
-                    # Create a consolidated string for the reports
-                    pdf_content = "\n\n".join([f"**{c.title}**\n{c.description}\n{c.content}" for c in courses])
-                    pdf = export_pdf(pdf_content, title="Ders Arşivi"); st.download_button("PDF İndir", pdf, "dersler.pdf", "application/pdf", key="pdf_dl_fixed", use_container_width=True)
-                else: st.warning("PDF motoru yukleniyor, bekleyin...")
+            c1, c2 = st.columns(2)
+            with c1: st.download_button("Excel İndir", export_excel(courses), "dersler.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+            with c2: 
+                pdf_raw = "\n\n".join([f"**{c.title}**\n{c.description}\n{c.content}" for c in courses])
+                st.download_button("PDF İndir", bytes(export_pdf(pdf_raw, title="Ders Arşivi")), "dersler.pdf", "application/pdf", use_container_width=True)
             st.markdown('</div>', unsafe_allow_html=True)
             for c in courses:
-                col_exp, col_del = st.columns([0.9, 0.1])
-                with col_exp: 
+                col1, col2 = st.columns([0.9, 0.1])
+                with col1: 
                     with st.expander(c.title): st.write(c.content)
-                with col_del:
-                    if st.button("Sil", key=f"d_{c.id}", type="primary"): delete_course(db, c.id); st.rerun()
-        else: st.warning("Ders bulunmuyor.")
-    with tab2:
-        with st.form("new_c"):
-            t = st.text_input("Başlık"); d = st.text_area("Açıklama"); c = st.text_area("İçerik"); sub = st.form_submit_button("Kaydet")
-            if sub and t and c: add_sample_course(db, t, d, c); st.success("Eklendi!"); st.rerun()
+                with col2:
+                    if st.button("Sil", key=f"del_{c.id}", type="primary"): delete_course(db, c.id); st.rerun()
 
 # --- PAGE: VERI ANALIZI ---
 elif st.session_state.page == "Veri Analizi":
@@ -170,5 +162,5 @@ elif st.session_state.page == "Veri Analizi":
 # --- PAGE: SETTINGS ---
 elif st.session_state.page == "Ayarlar":
     st.title("Ayarlar")
-    if st.button("Tüm Verileri Sıfırla", type="primary"):
+    if st.button("Verileri Sıfırla", type="primary"):
         db_gen = get_db(); db = next(db_gen); from sqlalchemy import delete; from models import Course, ChatHistory; db.execute(delete(Course)); db.execute(delete(ChatHistory)); db.commit(); st.rerun()

@@ -4,6 +4,6 @@ sqlalchemy
 python-dotenv
 google-generativeai
 groq
+fpdf2
 openpyxl
-xhtml2pdf
-# Build Version: 1.0.1
+# Fixed stable version

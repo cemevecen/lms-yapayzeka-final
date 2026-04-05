@@ -197,9 +197,11 @@ elif selected_page == "AI Sohbet":
             db.commit()
             st.rerun()
 
-    # Model Selection Container
-    st.markdown('<div style="background: var(--secondary-background-color); padding: 15px; border-radius: 12px; margin-bottom: 20px;">', unsafe_allow_html=True)
-    ai_provider = st.radio("Model Secin:", ["Gemini", "Groq"], horizontal=True)
+    # Model Selection Switch
+    st.markdown('<div style="background: var(--secondary-background-color); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">', unsafe_allow_html=True)
+    use_groq = st.toggle("Groq Modelini Kullan (Kapaliyken Gemini)", value=True)
+    ai_provider = "Groq" if use_groq else "Gemini"
+    st.markdown(f'<span style="font-weight: 600; color: #1f77b4;">Aktif Model: {ai_provider}</span>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
     
     db_gen = get_db()

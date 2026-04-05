@@ -41,3 +41,11 @@ def add_sample_course(db, title, description, content):
 
 def get_all_courses(db):
     return db.query(Course).all()
+
+def delete_course(db, course_id):
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if course:
+        db.delete(course)
+        db.commit()
+        return True
+    return False

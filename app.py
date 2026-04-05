@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from database import init_db, get_db, add_chat_message, get_chat_history, add_sample_course, get_all_courses
+from database import init_db, get_db, add_chat_message, get_chat_history, add_sample_course, get_all_courses, delete_course
 from ai_service import ai_service
 import os
 
@@ -168,9 +168,9 @@ elif selected_page == "AI Sohbet":
         if st.button("Gecmisi Temizle", use_container_width=True):
             db_gen = get_db()
             db = next(db_gen)
-            # Delete all messages from DB (simple way to clear for user)
-            from database import ChatMessage
-            db.query(ChatMessage).delete()
+            from sqlalchemy import delete
+            from models import ChatHistory
+            db.execute(delete(ChatHistory))
             db.commit()
             st.rerun()
 
@@ -189,25 +189,19 @@ elif selected_page == "AI Sohbet":
     for chat in chat_history:
         with st.chat_message(chat.role):
             st.markdown(chat.message)
-            # Smaller, subtle timestamp and model info
             st.markdown(f'<p style="font-size: 0.7rem; opacity: 0.5; margin: 0;">{chat.model_name} | {chat.timestamp.strftime("%H:%M")}</p>', unsafe_allow_html=True)
             
     # User Input Area
     if prompt := st.chat_input("Dersinle ilgili ne ogrenmek istersin?"):
-        # Display user message
         with st.chat_message("user"):
             st.markdown(prompt)
-        
-        # Save to DB
         add_chat_message(db, "user", prompt, ai_provider)
         
-        # Get AI Response
         with st.chat_message("assistant"):
             with st.spinner(f"{ai_provider} yanitliyor..."):
                 try:
                     response = ai_service.ask(prompt, provider=ai_provider.lower())
                     st.markdown(response)
-                    # Save response to DB
                     add_chat_message(db, "assistant", response, ai_provider)
                 except Exception as e:
                     st.error(f"Hata olustu: {str(e)}")
@@ -228,10 +222,16 @@ elif selected_page == "Ders Materyalleri":
             st.warning("Henüz kayıtlı ders bulunmamaktadır.")
         else:
             for course in courses:
-                with st.expander(f"{course.title}"):
-                    st.write(f"**Açıklama:** {course.description}")
-                    st.divider()
-                    st.write(course.content)
+                col_exp, col_del = st.columns([0.85, 0.15])
+                with col_exp:
+                    with st.expander(f"{course.title}"):
+                        st.write(f"**Açıklama:** {course.description}")
+                        st.divider()
+                        st.write(course.content)
+                with col_del:
+                    if st.button("Sil", key=f"del_{course.id}", type="primary", use_container_width=True):
+                        delete_course(db, course.id)
+                        st.rerun()
                     
     with tab2:
         with st.form("new_course"):
@@ -251,11 +251,10 @@ elif selected_page == "Ders Materyalleri":
 # --- PAGE: SETTINGS ---
 elif selected_page == "Ayarlar":
     st.title("Platform Ayarları")
-    
     st.subheader("API Yapılandırması")
+    
     gemini_key = os.getenv("GEMINI_API_KEY", "")
     groq_key = os.getenv("GROQ_API_KEY", "")
-    
     st.toggle("Gemini Aktif", value=bool(gemini_key), disabled=True)
     st.toggle("Groq Aktif", value=bool(groq_key), disabled=True)
     
@@ -263,7 +262,6 @@ elif selected_page == "Ayarlar":
     
     st.divider()
     st.subheader("Veri Yonetimi")
-    
     col_reset, col_sample = st.columns(2)
     
     with col_reset:
@@ -275,14 +273,13 @@ elif selected_page == "Ayarlar":
             db.execute(delete(Course))
             db.execute(delete(ChatHistory))
             db.commit()
-            st.warning("Tum veriler silindi. Artik temiz bir baslangic yapabilirsiniz.")
+            st.warning("Tum veriler silindi.")
             st.rerun()
 
     with col_sample:
         if st.button("Temiz Ornek Veri Yukle"):
             db_gen = get_db()
             db = next(db_gen)
-            # Predefined sample data without emojis
             sample_courses = [
                 {"title": "Cografya: Ekosistemler ve Iklim", "desc": "Kuresel iklim dengesi ve biyomlar.", "content": "Dunya'nin iklim sistemleri..."},
                 {"title": "Edebiyat: Turk Siiri", "desc": "Tanzimattan gunumuze.", "content": "Siir gelenekleri..."},
@@ -293,5 +290,5 @@ elif selected_page == "Ayarlar":
             ]
             for c in sample_courses:
                 add_sample_course(db, c["title"], c["desc"], c["content"])
-            st.success("Emojisiz temiz veriler basariyla yuklendi!")
+            st.success("Ornek veriler yuklendi!")
             st.rerun()

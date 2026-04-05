@@ -15,6 +15,8 @@ st.set_page_config(page_title="LMS Yapay Zeka Final", page_icon=None, layout="wi
 
 # Initialize Session State
 if 'page' not in st.session_state: st.session_state.page = "Ana Sayfa"
+if 'quiz_content' not in st.session_state: st.session_state.quiz_content = ""
+
 def navigate_to(page_name): st.session_state.page = page_name; st.rerun()
 
 init_db()
@@ -49,7 +51,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Sidebar
-pages = ["Ana Sayfa", "AI Sohbet", "Ders Materyalleri", "Veri Analizi", "Ayarlar"]
+pages = ["Ana Sayfa", "AI Sohbet", "Ders Materyalleri", "Quiz Hazirla", "Veri Analizi", "Ayarlar"]
 with st.sidebar:
     st.title("AI-LMS Dashboard"); st.divider()
     current_index = pages.index(st.session_state.page)
@@ -61,150 +63,107 @@ with st.sidebar:
 def export_excel(courses):
     df = pd.DataFrame([{"Baslik": c.title, "Aciklama": c.description, "Icerik": c.content} for c in courses])
     output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False)
+    with pd.ExcelWriter(output, engine='openpyxl') as writer: df.to_excel(writer, index=False)
     return output.getvalue()
 
-def export_pdf(courses):
-    if pisa is None:
-        raise ImportError("PDF motoru (xhtml2pdf) henuz yuklenmedi. Lutfen 1-2 dakika bekleyip sayfayi yenileyin.")
-    
-    html = f"""
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <style>
-            body {{ font-family: Helvetica, Arial, sans-serif; padding: 20px; color: #333; }}
-            h1 {{ text-align: center; color: #1f77b4; font-size: 24px; text-transform: uppercase; margin-bottom: 30px; border-bottom: 2px solid #1f77b4; padding-bottom: 10px; }}
-            .course-item {{ margin-bottom: 30px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }}
-            .course-title {{ font-weight: bold; font-size: 16px; color: #1f77b4; margin-bottom: 8px; }}
-            .course-desc {{ font-style: italic; font-size: 13px; color: #666; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 5px; }}
-            .course-content {{ font-size: 12px; line-height: 1.6; color: #222; text-align: justify; }}
-        </style>
-    </head>
-    <body>
-        <h1>Ders Katalogu Raporu</h1>
-    """
-    for c in courses:
-        content_br = c.content.replace('\n', '<br>')
-        html += f"""
-        <div class="course-item">
-            <div class="course-title">Ders: {c.title}</div>
-            <div class="course-desc">Aciklama: {c.description}</div>
-            <div class="course-content">{content_br}</div>
-        </div>
-        """
-    html += "</body></html>"
-    
+def export_pdf(content, title="Rapor"):
+    if pisa is None: raise ImportError("PDF motoru yukleniyor, bekleyin.")
+    html = f"<html><head><meta charset='UTF-8'><style>body {{ font-family: Helvetica, Arial, sans-serif; padding: 30px; }} h1 {{ color: #1f77b4; text-align: center; }} .content {{ line-height: 1.6; font-size: 12px; white-space: pre-wrap; }}</style></head><body><h1>{title}</h1><hr><div class='content'>{content}</div></body></html>"
     result = io.BytesIO()
-    pisa_status = pisa.CreatePDF(io.BytesIO(html.encode("UTF-8")), dest=result, encoding='UTF-8')
+    pisa.CreatePDF(io.BytesIO(html.encode("UTF-8")), dest=result, encoding='UTF-8')
     return result.getvalue()
 
 # --- PAGE: HOME ---
 if st.session_state.page == "Ana Sayfa":
     st.markdown('<div style="text-align: center; padding: 20px 0;"><h1 style="font-size: 3rem; margin-bottom:0;">LMS Yapay Zeka Final</h1><p style="font-size: 1.2rem; opacity: 0.8;">Eğitimde Yeni Nesil Yapay Zeka Deneyimi</p></div>', unsafe_allow_html=True)
     col1, col2, col3, col4 = st.columns(4)
-    with col1: st.markdown('<div class="stat-card"><div class="stat-value">12</div><div class="stat-label">Toplam Ders</div></div>', unsafe_allow_html=True)
-    with col2: st.markdown('<div class="stat-card"><div class="stat-value">156</div><div class="stat-label">Öğrenci Sayısı</div></div>', unsafe_allow_html=True)
-    with col3: st.markdown('<div class="stat-card"><div class="stat-value">4.8</div><div class="stat-label">Ortalama Puan</div></div>', unsafe_allow_html=True)
+    with col1: st.markdown('<div class="stat-card"><div class="stat-value">12</div><div class="stat-label">Ders Sayısı</div></div>', unsafe_allow_html=True)
+    with col2: st.markdown('<div class="stat-card"><div class="stat-value">156</div><div class="stat-label">Öğrenci</div></div>', unsafe_allow_html=True)
+    with col3: st.markdown('<div class="stat-card"><div class="stat-value">4.8</div><div class="stat-label">Puan</div></div>', unsafe_allow_html=True)
     with col4: st.markdown('<div class="stat-card"><div class="stat-value">850+</div><div class="stat-label">AI Yanıtı</div></div>', unsafe_allow_html=True)
     st.divider(); st.markdown("### Platform Özellikleri")
     fcol1, fcol2, fcol3 = st.columns(3)
     with fcol1:
-        st.markdown('<div class="feature-card"><h4>Akıllı Sohbet</h4><p style="font-size:0.9rem; opacity:0.8;">AI asistanlığı ile anlık soru-cevap.</p></div>', unsafe_allow_html=True)
-        if st.button("Sohbete Basla", use_container_width=True, key="btn_chat"): navigate_to("AI Sohbet")
+        st.markdown('<div class="feature-card"><h4>Akıllı Sohbet</h4><p style="font-size:0.8rem; opacity:0.8;">AI ile anlık soru-cevap.</p></div>', unsafe_allow_html=True)
+        if st.button("Sohbete Başla", use_container_width=True, key="h_go_chat"): navigate_to("AI Sohbet")
     with fcol2:
-        st.markdown('<div class="feature-card"><h4>İçerik Üretimi</h4><p style="font-size:0.9rem; opacity:0.8;">Ders materyallerini yönetin ve içerik üretin.</p></div>', unsafe_allow_html=True)
-        if st.button("Derslere Git", use_container_width=True, key="btn_courses"): navigate_to("Ders Materyalleri")
+        st.markdown('<div class="feature-card"><h4>Quiz Hazırlayıcı</h4><p style="font-size:0.8rem; opacity:0.8;">Saniyeler içinde sınav hazırlayın.</p></div>', unsafe_allow_html=True)
+        if st.button("Sınav Hazırla", use_container_width=True, key="h_go_quiz"): navigate_to("Quiz Hazirla")
     with fcol3:
-        st.markdown('<div class="feature-card"><h4>Veri Analizi</h4><p style="font-size:0.9rem; opacity:0.8;">Performans grafiklerini takip edin.</p></div>', unsafe_allow_html=True)
-        if st.button("Analizi Gor", use_container_width=True, key="btn_analysis"): navigate_to("Veri Analizi")
+        st.markdown('<div class="feature-card"><h4>Ders Arşivi</h4><p style="font-size:0.8rem; opacity:0.8;">Tüm içerikleri yönetin.</p></div>', unsafe_allow_html=True)
+        if st.button("Dersleri Gör", use_container_width=True, key="h_go_courses"): navigate_to("Ders Materyalleri")
 
 # --- PAGE: AI CHAT ---
 elif st.session_state.page == "AI Sohbet":
-    col1, col2 = st.columns([0.8, 0.2])
-    with col1: st.title("AI Egitmen Asistani"); st.caption("AI modelleri ile etkilesime gecin.")
-    with col2:
-        if st.button("Gecmisi Temizle", use_container_width=True):
-            db_gen = get_db(); db = next(db_gen)
-            from sqlalchemy import delete; from models import ChatHistory
-            db.execute(delete(ChatHistory)); db.commit(); st.rerun()
-    st.markdown('<div style="background:var(--secondary-background-color); padding:15px; border-radius:12px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between;">', unsafe_allow_html=True)
-    use_groq = st.toggle("Groq Modelini Kullan", value=True)
+    st.title("AI Egitmen Asistani")
+    c1, c2 = st.columns([0.8, 0.2])
+    with c2: 
+        if st.button("Temizle", use_container_width=True):
+            db_gen = get_db(); db = next(db_gen); from sqlalchemy import delete; from models import ChatHistory; db.execute(delete(ChatHistory)); db.commit(); st.rerun()
+    use_groq = st.toggle("Groq Modu", value=True)
     ai_provider = "Groq" if use_groq else "Gemini"
-    st.markdown(f'<span style="font-weight:600; color:#1f77b4;">Aktif Model: {ai_provider}</span>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-    db_gen = get_db(); db = next(db_gen); history = get_chat_history(db); chat_history = history[-20:] if len(history) > 20 else history
-    for chat in chat_history:
-        with st.chat_message(chat.role):
-            st.markdown(chat.message); st.markdown(f'<p style="font-size:0.7rem; opacity:0.5; margin:0;">{chat.model_name} | {chat.timestamp.strftime("%H:%M")}</p>', unsafe_allow_html=True)
-    if prompt := st.chat_input("Dersinle ilgili ne ogrenmek istersin?"):
-        with st.chat_message("user"): st.markdown(prompt)
-        add_chat_message(db, "user", prompt, ai_provider)
+    db_gen = get_db(); db = next(db_gen); history = get_chat_history(db)
+    for chat in history[-15:]:
+        with st.chat_message(chat.role): st.markdown(chat.message)
+    if pr := st.chat_input("Dersinle ilgili sor..."):
+        with st.chat_message("user"): st.markdown(pr)
+        add_chat_message(db, "user", pr, ai_provider)
         with st.chat_message("assistant"):
-            with st.spinner(f"{ai_provider} yanitliyor..."):
-                try:
-                    response = ai_service.ask(prompt, provider=ai_provider.lower()); st.markdown(response); add_chat_message(db, "assistant", response, ai_provider)
-                except Exception as e: st.error(f"Hata olustu: {str(e)}")
+            with st.spinner(f"{ai_provider}..."):
+                res = ai_service.ask(pr, provider=ai_provider.lower()); st.markdown(res); add_chat_message(db, "assistant", res, ai_provider)
+
+# --- PAGE: QUIZ ---
+elif st.session_state.page == "Quiz Hazirla":
+    st.title("AI Sinav Hazirlayici")
+    st.caption("Yapay zeka ile diledigin konuda aninda sınav veya test hazırlayın.")
+    
+    st.markdown('<div class="settings-card">', unsafe_allow_html=True)
+    col1, col2 = st.columns([0.7, 0.3])
+    with col1:
+        topic = st.text_input("Sinav Konusu veya Ders Basligi", placeholder="Ornegin: Osmanli Yukselme Donemi veya Fotosentez")
+    with col2:
+        q_count = st.slider("Soru Sayisi", 3, 15, 5)
+    
+    provider = st.selectbox("AI Modeli Secin", ["Groq", "Gemini"])
+    
+    if st.button("Sinavi Olustur", use_container_width=True, type="primary"):
+        if topic:
+            with st.spinner("Sorular hazirlaniyor..."):
+                prompt = f"{topic} konusu hakkinda {q_count} adet coktan secmeli soru iceren bir sinav hazirla. Her sorunun A,B,C,D secenekleri ve sonunda cevap anahtari olsun. Dil: Turkce."
+                st.session_state.quiz_content = ai_service.ask(prompt, provider=provider.lower())
+        else:
+            st.error("Lutfen bir konu girin.")
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    if st.session_state.quiz_content:
+        st.markdown('<div class="settings-card">', unsafe_allow_html=True)
+        st.subheader("Hazirlanan Sinav")
+        st.markdown(st.session_state.quiz_content)
+        
+        # Download as PDF
+        pdf_ready = export_pdf(st.session_state.quiz_content, title=f"SINAV: {topic.upper()}")
+        st.download_button("Sinavi PDF Olarak Indir", pdf_ready, file_name=f"sinav_{datetime.now().strftime('%d%m%y')}.pdf", mime="application/pdf", use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # --- PAGE: COURSES ---
 elif st.session_state.page == "Ders Materyalleri":
-    st.title("Ders Arşivi"); st.caption("Dersleri görüntüleyin, ekleyin veya dışa aktarın.")
-    db_gen = get_db(); db = next(db_gen); tab1, tab2 = st.tabs(["Mevcut Dersler", "Yeni Ders Ekle"])
+    st.title("Ders Arşivi"); db_gen = get_db(); db = next(db_gen); tab1, tab2 = st.tabs(["Listele", "Ekle"])
     with tab1:
         courses = get_all_courses(db)
-        if not courses: st.warning("Henüz kayıtlı ders bulunmamaktadır.")
-        else:
-            st.markdown('<div class="settings-card" style="padding:15px; margin-bottom:20px;">', unsafe_allow_html=True)
-            st.write("**Dersleri Disa Aktar (Export)**")
-            ec1, ec2 = st.columns(2)
-            with ec1:
-                excel = export_excel(courses); st.download_button("Excel Olarak Indir", excel, f"dersler_{datetime.now().strftime('%d%m%y')}.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
-            with ec2:
-                try:
-                    pdf = export_pdf(courses); st.download_button("PDF Olarak Indir", pdf, f"dersler_{datetime.now().strftime('%d%m%y')}.pdf", "application/pdf", key="pdf_dl_fixed", use_container_width=True)
-                except Exception as e: st.error(f"PDF Hatasi: {str(e)}")
-            st.markdown('</div>', unsafe_allow_html=True)
+        if courses:
             for c in courses:
-                col_exp, col_del = st.columns([0.85, 0.15])
-                with col_exp:
-                    with st.expander(f"{c.title}"): st.write(f"**Açıklama:** {c.description}"); st.divider(); st.write(c.content)
-                with col_del:
-                    if st.button("Sil", key=f"del_{c.id}", type="primary", use_container_width=True): delete_course(db, c.id); st.rerun()
-    with tab2:
-        with st.form("new_course"):
-            title = st.text_input("Ders Başlığı"); desc = st.text_area("Kısa Açıklama"); content = st.text_area("Ders İçeriği"); submit = st.form_submit_button("Dersi Kaydet")
-            if submit and title and content: add_sample_course(db, title, desc, content); st.success("Ders eklendi!"); st.rerun()
+                exp_col, del_col = st.columns([0.9, 0.1])
+                with exp_col: 
+                    with st.expander(c.title): st.write(c.content)
+                with del_col:
+                    if st.button("Sil", key=f"d_{c.id}", type="primary"): delete_course(db, c.id); st.rerun()
 
 # --- PAGE: VERI ANALIZI ---
 elif st.session_state.page == "Veri Analizi":
-    st.title("Egitim Veri Analizi"); st.markdown('<div class="settings-card">', unsafe_allow_html=True)
-    st.subheader("Ogrenci Katilim Oranlari"); chart_data = pd.DataFrame({'Ders': ['Matematik', 'Cografya', 'Resim', 'Edebiyat', 'Kimya', 'Muzik'], 'Katilim': [85, 72, 95, 68, 80, 92]})
-    st.bar_chart(data=chart_data, x='Ders', y='Katilim'); st.markdown('</div>', unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown('<div class="settings-card">', unsafe_allow_html=True); st.subheader("AI Yanit Basarisi"); st.progress(0.92, text="92% Memnuniyet"); st.markdown('</div>', unsafe_allow_html=True)
-    with col2:
-        st.markdown('<div class="settings-card">', unsafe_allow_html=True); st.subheader("İcerik Cukitisi"); st.progress(0.75, text="75% Uyumluluk"); st.markdown('</div>', unsafe_allow_html=True)
+    st.title("Veri Analizi"); st.bar_chart(pd.DataFrame({'Ders': ['Mat', 'Cog', 'Res', 'Edb'], 'Puan': [85, 72, 95, 68]}))
 
 # --- PAGE: SETTINGS ---
 elif st.session_state.page == "Ayarlar":
-    st.title("Sistem Yonetimi"); st.markdown('<div class="settings-card">', unsafe_allow_html=True)
-    st.subheader("API Yapilandirmasi"); gk = os.getenv("GEMINI_API_KEY"); grk = os.getenv("GROQ_API_KEY"); ac1, ac2 = st.columns(2)
-    with ac1:
-        css = "status-active" if gk else "status-passive"; txt = "AKTIF" if gk else "PASIF"
-        st.markdown(f'<div style="display:flex; justify-content:space-between; padding:10px; background:rgba(0,0,0,0.05); border-radius:10px;"><span>Gemini API</span><span class="status-badge {css}">{txt}</span></div>', unsafe_allow_html=True)
-    with ac2:
-        css = "status-active" if grk else "status-passive"; txt = "AKTIF" if grk else "PASIF"
-        st.markdown(f'<div style="display:flex; justify-content:space-between; padding:10px; background:rgba(0,0,0,0.05); border-radius:10px;"><span>Groq API</span><span class="status-badge {css}">{txt}</span></div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True); st.markdown('<div class="settings-card">', unsafe_allow_html=True)
-    st.subheader("Veri Yonetimi"); dcol1, dcol2 = st.columns(2)
-    with dcol1:
-        if st.button("Veritabanini Sifirla", type="primary", use_container_width=True, key="reset_btn"):
-            db_gen = get_db(); db = next(db_gen); from sqlalchemy import delete; from models import Course, ChatHistory; db.execute(delete(Course)); db.execute(delete(ChatHistory)); db.commit(); st.rerun()
-    with dcol2:
-        if st.button("Ornek Veri Yukle", use_container_width=True, key="sample_btn"):
-            db_gen = get_db(); db = next(db_gen); sc = [{"title": "Cografya", "desc": "Dogal kaynaklar.", "content": "Iklim ve eko-sistemler."}, {"title": "Matematik", "desc": "Kalkulus.", "content": "Turev ve integral."}]
-            for c in sc: add_sample_course(db, c["title"], c["desc"], c["content"]); st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True); st.markdown('<div class="settings-card">', unsafe_allow_html=True)
-    st.subheader("Sistem Bilgisi"); sc1, sc2, sc3 = st.columns(3); sc1.metric("Versiyon", "v1.0.0"); sc2.metric("Durum", "Kararli"); sc3.metric("Guncelleme", datetime.now().strftime("%d/%m/%Y")); st.markdown('</div>', unsafe_allow_html=True)
+    st.title("Sistem Yonetimi")
+    if st.button("Veritabanini Sifirla", type="primary"):
+        db_gen = get_db(); db = next(db_gen); from sqlalchemy import delete; from models import Course, ChatHistory; db.execute(delete(Course)); db.execute(delete(ChatHistory)); db.commit(); st.rerun()

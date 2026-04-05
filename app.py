@@ -18,6 +18,38 @@ TEST_LOGIN_HELP = """test girişi
 isim: admin
 şifre: admin"""
 
+def _quiz_results_dataframe(rows):
+    """Veri Analizi ile aynı alanlar; ana sayfa tablosu için."""
+    rows = list(rows)
+    out = []
+    for r in rows:
+        ts = ""
+        if getattr(r, "created_at", None) is not None:
+            try:
+                ts = r.created_at.strftime("%d.%m.%Y %H:%M")
+            except Exception:
+                ts = str(r.created_at)
+        out.append({
+            "Ders": r.quiz_title or "",
+            "Öğrenci": r.student_name or "",
+            "Puan": r.score,
+            "Eklenme": ts,
+        })
+    return pd.DataFrame(out)
+
+def _quiz_chart_student_labels(rows):
+    """Grafik ekseni için öğrenci adı; tekrarlayan isimlerde (2), (3) ile ayırır."""
+    used = {}
+    labels = []
+    for r in rows:
+        raw = (r.student_name or "").strip() or "Öğrenci"
+        if len(raw) > 18:
+            raw = raw[:17] + "…"
+        n = used.get(raw, 0) + 1
+        used[raw] = n
+        labels.append(raw if n == 1 else f"{raw} ({n})")
+    return labels
+
 def _admin_credentials():
     """Varsayılan admin/admin; Streamlit Cloud Secrets ile override edilebilir."""
     try:
@@ -377,6 +409,8 @@ if st.session_state.page == "Ana Sayfa":
     n_assist_msgs = sum(1 for h in history if h.role == "assistant")
     n_quiz_rows = len(quiz_res)
     avg_score = round(sum(r.score for r in quiz_res) / n_quiz_rows, 1) if n_quiz_rows else None
+    unique_quiz_titles = sorted({(r.quiz_title or "").strip() for r in quiz_res if (r.quiz_title or "").strip()})
+    n_unique_exam_titles = len(unique_quiz_titles)
     default_ai = st.session_state.get("default_model", "Groq")
 
     st.markdown("""
@@ -394,12 +428,17 @@ if st.session_state.page == "Ana Sayfa":
     r1.metric("Kayıtlı ders", n_courses, help="Ders materyalleri arşivindeki kayıt sayısı")
     r2.metric("Kullanıcı mesajı", n_user_msgs, help="AI sohbetinde gönderilen mesaj adedi")
     r3.metric("AI yanıtı", n_assist_msgs, help="Asistan tarafından üretilen yanıt adedi")
-    r4.metric("Sınav kayıtları", n_quiz_rows, help="Veritabanındaki sınav sonucu satırı")
+    r4.metric(
+        "Sınav kayıtları",
+        n_quiz_rows,
+        help="Veri Analizi ve Quiz modülünden gelen tüm sınav/not satırları",
+    )
     r5.metric("Ortalama puan", f"{avg_score}" if avg_score is not None else "—", help="Tüm sınav sonuçlarının ortalaması")
 
     st.markdown(
         f'<div class="metrics-foot">Varsayılan AI modeli: <strong>{html.escape(default_ai)}</strong>'
-        f' · Sohbet toplam mesaj: <strong>{len(history)}</strong></div>',
+        f' · Sohbet toplam mesaj: <strong>{len(history)}</strong>'
+        f' · Veri analizinde farklı ders başlığı: <strong>{n_unique_exam_titles}</strong></div>',
         unsafe_allow_html=True,
     )
 
@@ -414,31 +453,44 @@ if st.session_state.page == "Ana Sayfa":
             if quiz_res:
                 take = quiz_res[:18]
                 chart_df = pd.DataFrame({
-                    "Kayıt": [f"{i+1}" for i in range(len(take))],
                     "Puan": [r.score for r in take],
-                }).set_index("Kayıt")
+                }, index=_quiz_chart_student_labels(take))
+                chart_df.index.name = "Öğrenci"
                 st.bar_chart(chart_df, color=accent)
             else:
                 st.caption("Henüz sınav sonucu yok. Quiz veya Veri Analizi ile kayıt ekleyin.")
     with g2:
         with st.container(border=True):
             st.markdown(
-                '<div class="dash-native-head"><span aria-hidden="true">☰</span> Son sınav kayıtları</div>',
+                '<div class="dash-native-head"><span aria-hidden="true">☰</span> Son kayıtlar (önizleme)</div>',
                 unsafe_allow_html=True,
             )
             if quiz_res:
                 tail = quiz_res[:8]
                 st.dataframe(
-                    pd.DataFrame([{
-                        "Ders": r.quiz_title[:40] + ("…" if len(r.quiz_title) > 40 else ""),
-                        "Öğrenci": r.student_name,
-                        "Puan": r.score,
-                    } for r in tail]),
+                    _quiz_results_dataframe(tail).drop(columns=["Eklenme"], errors="ignore"),
                     use_container_width=True,
                     hide_index=True,
                 )
             else:
                 st.caption("Gösterilecek kayıt yok.")
+
+    st.markdown('<p class="section-heading">Veri Analizi · canlı yansıma</p>', unsafe_allow_html=True)
+    st.caption(
+        "Veri Analizi sayfasındaki **Manuel Not Girişi** ve simülasyonlarla eklenen tüm satırlar burada listelenir; "
+        "metinler veritabanından okunur, sayfa her açıldığında güncellenir."
+    )
+    if unique_quiz_titles:
+        st.markdown(
+            "**Ders başlıkları (dinamik):** "
+            + " · ".join(html.escape(t) for t in unique_quiz_titles),
+        )
+    if quiz_res:
+        df_all = _quiz_results_dataframe(quiz_res)
+        h = min(520, 56 + 36 * max(1, len(quiz_res)))
+        st.dataframe(df_all, use_container_width=True, hide_index=True, height=h)
+    else:
+        st.info("Henüz sınav/not kaydı yok. Veri Analizi → Manuel Not Girişi ile ekleyin.")
 
     st.markdown('<p class="section-heading">Son sohbet (özet)</p>', unsafe_allow_html=True)
     tail_chat = history[-6:]

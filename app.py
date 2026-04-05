@@ -88,13 +88,18 @@ def export_pdf(courses):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("helvetica", size=16)
-    pdf.cell(200, 10, txt="Ders Katalogu Raporu", ln=True, align='C')
+    # Correctly encoding the title for Turkish support in PDF
+    header_text = "Ders Katalogu Raporu".encode('cp1254', 'ignore').decode('latin-1')
+    pdf.cell(200, 10, txt=header_text, ln=True, align='C')
     pdf.ln(10)
     for c in courses:
         pdf.set_font("helvetica", style='B', size=12)
-        pdf.cell(200, 10, txt=f"Ders: {c.title}", ln=True)
+        # Using cp1254 encoding for the Turkish content
+        title_text = f"Ders: {c.title}".encode('cp1254', 'ignore').decode('latin-1')
+        pdf.cell(200, 10, txt=title_text, ln=True)
         pdf.set_font("helvetica", size=10)
-        pdf.multi_cell(0, 10, txt=f"Icerik:\n{c.content}")
+        content_text = f"Icerik:\n{c.content}".encode('cp1254', 'ignore').decode('latin-1')
+        pdf.multi_cell(0, 10, txt=content_text)
         pdf.ln(10)
         pdf.cell(200, 0, ln=True, border='T')
         pdf.ln(5)

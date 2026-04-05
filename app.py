@@ -5,6 +5,7 @@ from ai_service import ai_service
 import os
 import io
 from datetime import datetime
+from fpdf import FPDF
 try:
     from xhtml2pdf import pisa
 except ImportError:

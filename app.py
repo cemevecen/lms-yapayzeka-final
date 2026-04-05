@@ -82,14 +82,14 @@ if st.session_state.page == "Ana Sayfa":
     db_gen = get_db(); db = next(db_gen); courses = get_all_courses(db); history = get_chat_history(db)
     st.markdown(f'<div style="text-align:center; padding:20px 0;"><h1 style="font-size:3rem; margin-bottom:0; color:{accent};">LMS Yapay Zeka Final</h1><p style="font-size:1.2rem; opacity:0.8;">Eğitimde Yeni Nesil Analitik Deneyim</p></div>', unsafe_allow_html=True)
     col1, col2 = st.columns(2)
-    with col1: st.markdown(f'<div class="stat-card"><div class="stat-value">{len(courses)}</div><div class="stat-label">Dersler</div></div>', unsafe_allow_html=True)
+    with col1: st.markdown(f'<div class="stat-card"><div class="stat-value">{len(courses)}</div><div class="stat-label">Ders Arşivi</div></div>', unsafe_allow_html=True)
     with col2: st.markdown(f'<div class="stat-card"><div class="stat-value">{len(history)}</div><div class="stat-label">AI Mesajları</div></div>', unsafe_allow_html=True)
     st.divider(); st.markdown("### Hızlı Kısayollar")
     c1, c2, c3 = st.columns(3);
     with c1: 
         if st.button("Sohbet Paneli", use_container_width=True): navigate_to("AI Sohbet")
     with c2: 
-        if st.button("Quiz Hazırla", use_container_width=True): navigate_to("Quiz Hazirla")
+        if st.button("Sınav Hazırla", use_container_width=True): navigate_to("Quiz Hazirla")
     with c3: 
         if st.button("Analizler", use_container_width=True): navigate_to("Veri Analizi")
 
@@ -115,7 +115,7 @@ elif st.session_state.page == "Quiz Hazirla":
     with c2: q_count = st.slider("Adet", 3, 20, 5)
     if st.button("AI Sınav Oluştur", use_container_width=True, type="primary"):
         if topic:
-            with st.spinner("AI Yanıtlıyor..."):
+            with st.spinner("AI Hazırlıyor..."):
                 st.session_state.quiz_content = ai_service.ask(f"{topic} hakkında {q_count} soruluk test hazırla.", temp=st.session_state.ai_temp, tokens=st.session_state.ai_tokens)
                 st.session_state.current_quiz_title = topic
     st.markdown('</div>', unsafe_allow_html=True)
@@ -131,30 +131,33 @@ elif st.session_state.page == "Ders Materyalleri":
             with st.expander(c.title, expanded=st.session_state.course_expanded): st.write(c.content)
 
 elif st.session_state.page == "Veri Analizi":
-    st.title("Veri Analizi Paneli"); db_gen = get_db(); db = next(db_gen); quiz_res = get_quiz_results(db); courses = get_all_courses(db)
-    # Removing System Analysis tab as requested
+    st.title("Veri Analizi Paneli"); db_gen = get_db(); db = next(db_gen); quiz_res = get_quiz_results(db)
     t1, t2 = st.tabs(["Ders Başarı Göstergeleri", "Manuel Puan Girişi"])
     with t1:
         st.subheader("Öğrenci Başarı Analizi")
         if quiz_res:
-            res_df = pd.DataFrame([{"Öğrenci": r.student_name, "Puan": r.score, "Sınav": r.quiz_title} for r in quiz_res])
+            res_df = pd.DataFrame([{"Öğrenci": r.student_name, "Puan": r.score, "Ders": r.quiz_title} for r in quiz_res])
             m1, m2, m3 = st.columns(3); m1.metric("Sınıf Ortalaması", round(res_df["Puan"].mean(), 1)); m2.metric("En Yüksek Puan", res_df["Puan"].max())
-            last = res_df.iloc[0]; m3.metric("Son Girilen Not", f"{last['Puan']}", delta=f"{last['Öğrenci']}")
+            last = res_df.iloc[0]; m3.metric("Son Girilen Not", f"{last['Puan']}", delta=f"{last['Öğrenci']} - {last['Ders']}")
             if st.session_state.chart_type == "Bar": st.bar_chart(res_df.set_index("Öğrenci")["Puan"], color=accent)
             elif st.session_state.chart_type == "Line": st.line_chart(res_df.set_index("Öğrenci")["Puan"], color=accent)
             else: st.area_chart(res_df.set_index("Öğrenci")["Puan"], color=accent)
             st.dataframe(res_df, use_container_width=True)
         else:
-            st.info("Sonuç bulunmuyor.")
-            if st.button("Simülasyon Verisi Yükle (15 Kişi)"):
-                for n in ["Ahmet","Fatma","Can","Selin","Burak","Elif","Mehmet","Ayşe","Deniz","Zeynep","Emir","Melis","Okan","Gizem","Arda"]: add_quiz_result(db, "Sınıf Değerlendirme", n, random.randint(72,100))
+            st.info("Kayıt bulunmuyor.")
+            if st.button("15 Öğrenci Simülasyonunu Başlat", use_container_width=True, type="primary"):
+                names = ["Ahmet","Fatma","Can","Selin","Burak","Elif","Mehmet","Ayşe","Deniz","Zeynep","Emir","Melis","Okan","Gizem","Arda"]
+                subjects = ["Matematik", "Fizik", "Biyoloji", "Edebiyat", "Tarih", "Coğrafya", "Kimya", "İngilizce", "Geometri", "Felsefe", "Yazılım", "Sanat", "Müzik", "Beden Eğitimi", "Yapay Zeka"]
+                for i, n in enumerate(names): add_quiz_result(db, subjects[i % len(subjects)], n, random.randint(72,100))
                 st.rerun()
     with t2:
-        st.subheader("Manuel Veri Girişi")
+        st.subheader("Yeni Veri Girişi")
         with st.form("man_entry"):
-            name = st.text_input("Öğrenci Adı"); quiz = st.text_input("Sınav Başlığı"); score = st.number_input("Puan", 0, 100, 85)
-            if st.form_submit_button("Sisteme İşle"):
-                add_quiz_result(db, quiz, name, score); st.success("Kaydedildi!"); st.rerun()
+            name = st.text_input("Öğrenci Adı Soyadı"); quiz = st.text_input("Ders Adı", placeholder="Ör: Matematik")
+            score = st.number_input("Puan", 0, 100, 85)
+            if st.form_submit_button("Sonucu Kaydet"):
+                if name and quiz: add_quiz_result(db, quiz, name, score); st.success("Puan işlendi!"); st.rerun()
+                else: st.error("Lütfen tüm alanları doldurun.")
 
 elif st.session_state.page == "Ayarlar":
     st.title("Denetleme Masası")

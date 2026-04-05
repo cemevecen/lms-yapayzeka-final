@@ -160,24 +160,40 @@ if selected_page == "Ana Sayfa":
 
 # --- PAGE: AI CHAT ---
 elif selected_page == "AI Sohbet":
-    st.title("AI Eğitmen Asistanı")
-    st.caption("Farklı yapay zeka modelleri ile etkileşime geçin.")
-    
-    # Model Selection
-    ai_provider = st.radio("Provider Seçin:", ["Gemini", "Groq"], horizontal=True)
+    col1, col2 = st.columns([0.8, 0.2])
+    with col1:
+        st.title("AI Egitmen Asistani")
+        st.caption("Yapay zeka modelleri ile dersleriniz hakkinda etkilesime gecin.")
+    with col2:
+        if st.button("Gecmisi Temizle", use_container_width=True):
+            db_gen = get_db()
+            db = next(db_gen)
+            # Delete all messages from DB (simple way to clear for user)
+            from database import ChatMessage
+            db.query(ChatMessage).delete()
+            db.commit()
+            st.rerun()
+
+    # Model Selection Container
+    st.markdown('<div style="background: var(--secondary-background-color); padding: 15px; border-radius: 12px; margin-bottom: 20px;">', unsafe_allow_html=True)
+    ai_provider = st.radio("Model Secin:", ["Gemini", "Groq"], horizontal=True)
+    st.markdown('</div>', unsafe_allow_html=True)
     
     db_gen = get_db()
     db = next(db_gen)
     
-    # Chat History
-    chat_history = get_chat_history(db)
+    # Chat History Container (Limit to last 20 for focus)
+    history = get_chat_history(db)
+    chat_history = history[-20:] if len(history) > 20 else history
+    
     for chat in chat_history:
         with st.chat_message(chat.role):
-            st.write(chat.message)
-            st.caption(f"Model: {chat.model_name} | {chat.timestamp.strftime('%H:%M')}")
+            st.markdown(chat.message)
+            # Smaller, subtle timestamp and model info
+            st.markdown(f'<p style="font-size: 0.7rem; opacity: 0.5; margin: 0;">{chat.model_name} | {chat.timestamp.strftime("%H:%M")}</p>', unsafe_allow_html=True)
             
-    # User Input
-    if prompt := st.chat_input("Dersinle ilgili ne öğrenmek istersin?"):
+    # User Input Area
+    if prompt := st.chat_input("Dersinle ilgili ne ogrenmek istersin?"):
         # Display user message
         with st.chat_message("user"):
             st.markdown(prompt)
@@ -187,12 +203,14 @@ elif selected_page == "AI Sohbet":
         
         # Get AI Response
         with st.chat_message("assistant"):
-            with st.spinner(f"{ai_provider} düşünülüyor..."):
-                response = ai_service.ask(prompt, provider=ai_provider.lower())
-                st.markdown(response)
-        
-        # Save response to DB
-        add_chat_message(db, "assistant", response, ai_provider)
+            with st.spinner(f"{ai_provider} yanitliyor..."):
+                try:
+                    response = ai_service.ask(prompt, provider=ai_provider.lower())
+                    st.markdown(response)
+                    # Save response to DB
+                    add_chat_message(db, "assistant", response, ai_provider)
+                except Exception as e:
+                    st.error(f"Hata olustu: {str(e)}")
 
 # --- PAGE: COURSES ---
 elif selected_page == "Ders Materyalleri":

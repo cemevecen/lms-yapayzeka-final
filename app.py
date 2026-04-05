@@ -261,45 +261,37 @@ elif selected_page == "Ayarlar":
     
     st.info("API anahtarları .env dosyası üzerinden yönetilmektedir.")
     
-    if st.button("Örnek Veri Yükle"):
-        db_gen = get_db()
-        db = next(db_gen)
-        
-        sample_courses = [
-            {
-                "title": "Cografya: Ekosistemler ve Iklim",
-                "desc": "Küresel iklim dengesi, biyomlar ve sürdürülebilirlik üzerine derinlemesine bir bakış.",
-                "content": "Bu derste Dünya'nın iklim sistemlerini ve ekosistem çeşitliliğini inceleyeceğiz..."
-            },
-            {
-                "title": "Edebiyat: Tanzimattan Günümüze Türk Siiri",
-                "desc": "Türk edebiyatının modernleşme sürecindeki şiir gelenekleri ve akımları.",
-                "content": "Türk şiirinin evrimini dönemler bazında analiz ediyoruz..."
-            },
-            {
-                "title": "Matematik: Kalkülüs ve Uygulamalari",
-                "desc": "Türev ve integral kavramlarının mühendislik ve fizik dünyasındaki yeri.",
-                "content": "Matematiğin en güçlü araçlarından biri olan analiz dünyasına giriş..."
-            },
-            {
-                "title": "Resim: Rönesanstan Modern Sanata",
-                "desc": "Sanat tarihinin dönüm noktaları, teknikler ve büyük ustalar.",
-                "content": "Görsel sanatların tarihsel sürecine ışık tutuyoruz..."
-            },
-            {
-                "title": "Müzik: Bati Klasik Müzigi ve Armoni",
-                "desc": "Müzik teorisi, armoni kuralları ve klasik müzik dönemleri.",
-                "content": "Seslerin matematiğini ve tarihin ritmini keşfedin..."
-            },
-            {
-                "title": "Kimya: Organik Kimya ve Karbon",
-                "desc": "Hayatın temelini oluşturan karbon bileşiklerinin yapısı ve tepkimeleri.",
-                "content": "Yaşamın yapı taşlarını moleküler düzeyde inceleyin..."
-            }
-        ]
-        
-        for c in sample_courses:
-            add_sample_course(db, c["title"], c["desc"], c["content"])
-            
-        st.success(f"{len(sample_courses)} adet zengin içerikli ders başarıyla yüklendi!")
-        st.rerun()
+    st.divider()
+    st.subheader("Veri Yonetimi")
+    
+    col_reset, col_sample = st.columns(2)
+    
+    with col_reset:
+        if st.button("Veritabanini Sifirla (Tumunu Sil)", type="primary"):
+            db_gen = get_db()
+            db = next(db_gen)
+            from sqlalchemy import delete
+            from models import Course, ChatHistory
+            db.execute(delete(Course))
+            db.execute(delete(ChatHistory))
+            db.commit()
+            st.warning("Tum veriler silindi. Artik temiz bir baslangic yapabilirsiniz.")
+            st.rerun()
+
+    with col_sample:
+        if st.button("Temiz Ornek Veri Yukle"):
+            db_gen = get_db()
+            db = next(db_gen)
+            # Predefined sample data without emojis
+            sample_courses = [
+                {"title": "Cografya: Ekosistemler ve Iklim", "desc": "Kuresel iklim dengesi ve biyomlar.", "content": "Dunya'nin iklim sistemleri..."},
+                {"title": "Edebiyat: Turk Siiri", "desc": "Tanzimattan gunumuze.", "content": "Siir gelenekleri..."},
+                {"title": "Matematik: Kalkulus", "desc": "Turev ve integral.", "content": "Analiz temelleri..."},
+                {"title": "Resim: Sanat Tarihi", "desc": "Rönesanstan modern sanata.", "content": "Sanat akimlari..."},
+                {"title": "Müzik: Klasik Muzik", "desc": "Bati muzigi donemleri.", "content": "Muzik teorisi..."},
+                {"title": "Kimya: Organik Kimya", "desc": "Karbon bilesikleri.", "content": "Molekuler yapi..."}
+            ]
+            for c in sample_courses:
+                add_sample_course(db, c["title"], c["desc"], c["content"])
+            st.success("Emojisiz temiz veriler basariyla yuklendi!")
+            st.rerun()

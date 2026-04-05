@@ -66,7 +66,6 @@ with st.sidebar:
         st.session_state.page = selected_page
         st.rerun()
     st.divider()
-    st.info("Bu platform Gemini ve Groq LLM API'leri ile güçlendirilmiştir.")
 
 # --- HELPERS: EXPORT ---
 def export_excel(courses):

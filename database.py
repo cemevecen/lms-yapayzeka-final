@@ -20,6 +20,10 @@ def get_db():
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    db = next(get_db())
+    if not db.query(User).filter(User.username == "admin").first():
+        admin = User(username="admin", password="admin123")
+        db.add(admin); db.commit()
 
 # CRUD Operations Helper
 def add_chat_message(db, role, message, model_name, user_id=None):

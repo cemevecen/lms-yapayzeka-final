@@ -8,6 +8,7 @@ import io
 import json
 from datetime import datetime
 from fpdf import FPDF
+from models import User
 
 # --- PERSISTENT SETTINGS ---
 SETTINGS_FILE = "persistent_settings.json"
@@ -20,6 +21,7 @@ def save_settings_to_disk(data):
 
 p = load_settings()
 states = {
+    'logged_in': False,
     'ui_accent': p.get('ui_accent', "#1f77b4"),
     'ai_temp': p.get('ai_temp', 0.7),
     'ai_tokens': p.get('ai_tokens', 2048),
@@ -27,21 +29,52 @@ states = {
     'ui_glass': p.get('ui_glass', 0.8),
     'chart_type': p.get('chart_type', "Bar"),
     'default_model': p.get('default_model', "Groq"),
-    'course_expanded': p.get('course_expanded', False),
-    'pdf_pagenums': p.get('pdf_pagenums', True),
     'page': "Ana Sayfa",
-    'quiz_content': "",
-    'current_quiz_title': ""
 }
 for k, v in states.items():
     if k not in st.session_state: st.session_state[k] = v
 
 st.set_page_config(page_title="LMS Yapay Zeka Pro", page_icon=None, layout="wide", initial_sidebar_state="expanded")
-def navigate_to(pname): st.session_state.page = pname; st.rerun()
 init_db()
 
 accent = st.session_state.ui_accent
 glass = st.session_state.ui_glass
+
+# LOGIN PAGE UI
+def login_screen():
+    st.markdown(f"""
+    <style>
+        .login-card {{
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            padding: 50px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1);
+            text-align: center; max-width: 450px; margin: 100px auto;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.5);
+        }}
+    </style>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown('<div class="login-card">', unsafe_allow_html=True)
+        st.image("banner.png", width=150) if os.path.exists("banner.png") else st.title("AI-LMS")
+        st.subheader("Eğitmen Portalı")
+        user = st.text_input("Kullanıcı Adı", placeholder="admin")
+        pwd = st.text_input("Şifre", type="password", placeholder="admin123")
+        if st.button("Giriş Yap", type="primary", use_container_width=True):
+            db_gen = get_db(); db = next(db_gen)
+            db_user = db.query(User).filter(User.username == user, User.password == pwd).first()
+            if db_user:
+                st.session_state.logged_in = True; st.rerun()
+            else:
+                st.error("Hatalı giriş! admin / admin123 deneyin.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+if not st.session_state.logged_in:
+    login_screen(); st.stop()
+
+# --- MAIN APP UI (After login) ---
+
 st.markdown(f"""
 <style>
     :root {{ --primary-color: {accent}; }}
@@ -51,75 +84,50 @@ st.markdown(f"""
         background: rgba(255, 255, 255, {glass*0.05 if glass < 1 else 0.1}); 
         backdrop-filter: blur({glass*10}px); padding: 25px; border-radius: 20px; border: 1px solid var(--divider-color); margin-bottom: 20px; 
     }}
-    .hero-card {{
-        background: linear-gradient(135deg, {accent} 0%, #2c3e50 100%);
-        padding: 40px; border-radius: 30px; text-align: center; color: white; margin-bottom: 30px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-    }}
     .stat-box {{
         background: var(--secondary-background-color); padding: 20px; border-radius: 15px; border: 1px solid var(--divider-color);
         text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); min-width: 150px;
     }}
     .stat-val {{ font-size: 32px; font-weight: 850; color: {accent}; }}
-    .stat-lab {{ font-size: 14px; opacity: 0.7; font-weight: 600; text-transform: uppercase; }}
     .nav-card {{
         background: var(--secondary-background-color); padding: 25px; border-radius: 20px; border: 1px solid var(--divider-color);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; text-align: center; height: 180px;
+        transition: all 0.3s; cursor: pointer; text-align: center; height: 180px;
         display: flex; flex-direction: column; justify-content: center; align-items: center;
     }}
     .nav-card:hover {{ transform: translateY(-10px); border-color: {accent}; box-shadow: 0 12px 24px rgba(0,0,0,0.1); }}
-    .stButton>button {{ border-radius: 12px; font-weight: 600; transition: all 0.2s; border: 1px solid {accent}; }}
 </style>
 """, unsafe_allow_html=True)
 
-# Shared Cores
-def populate_demo_courses(db):
-    demo = [("Matematik", "Kalkülüs", "Analiz dünyası..."), ("Fizik", "Newton", "Prensipler..."), ("Yazılım", "Python", "Giriş..."), ("Yapay Zeka", "Deep Learning", "Gelecek..."), ("Kimya", "Periyodik", "Elementler...")]
-    for t, d, c in demo: add_sample_course(db, t, d, c)
-    return True
-def core_simulate(db, subjects_override=None):
-    names = ["Ahmet","Fatma","Can","Selin","Burak","Elif","Mehmet","Ayşe","Deniz","Zeynep","Emir","Melis","Okan","Gizem","Arda"]
-    subjects = ["Matematik", "Fizik", "Yazılım", "Yapay Zeka", "Kimya", "Edebiyat", "Tarih", "Biyoloji"]
-    for i, n in enumerate(names):
-        subj = subjects_override if subjects_override else subjects[i % len(subjects)]
-        add_quiz_result(db, subj, n, random.randint(72,100))
-    return True
+def navigate_to(pname): st.session_state.page = pname; st.rerun()
 
-# Navigation
+# Sidebar
 pages = ["Ana Sayfa", "AI Sohbet", "Ders Materyalleri", "Quiz Hazirla", "Veri Analizi", "Ayarlar"]
 with st.sidebar:
     st.title("AI-LMS Pro"); st.divider()
     s_page = st.radio("Navigasyon", pages, index=pages.index(st.session_state.page))
     if s_page != st.session_state.page: st.session_state.page = s_page; st.rerun()
+    st.divider()
+    if st.button("Çıkış Yap", use_container_width=True):
+        st.session_state.logged_in = False; st.rerun()
 
 # --- PAGES ---
 if st.session_state.page == "Ana Sayfa":
     db_gen = get_db(); db = next(db_gen); courses = get_all_courses(db); history = get_chat_history(db)
-    
-    # Hero Section
     if os.path.exists("banner.png"): st.image("banner.png", use_container_width=True)
-    else:
-        st.markdown(f'<div class="hero-card"><h1>LMS Yapay Zeka Pro</h1><p>Geleceğin Akıllı Eğitim Deneyimi</p></div>', unsafe_allow_html=True)
-    
-    # Stats Row
     st.markdown("### Sistem Özeti")
     sc1, sc2, sc3, sc4 = st.columns(4)
-    with sc1: st.markdown(f'<div class="stat-box"><div class="stat-val">{len(courses)}</div><div class="stat-lab">Aktif Ders</div></div>', unsafe_allow_html=True)
+    with sc1: st.markdown(f'<div class="stat-box"><div class="stat-val">{len(courses)}</div><div class="stat-lab">Ders</div></div>', unsafe_allow_html=True)
     with sc2: st.markdown(f'<div class="stat-box"><div class="stat-val">{len(history)}</div><div class="stat-lab">AI Yanıtı</div></div>', unsafe_allow_html=True)
-    with sc3: st.markdown(f'<div class="stat-box"><div class="stat-val">15</div><div class="stat-lab">Öğrenci</div></div>', unsafe_allow_html=True)
-    with sc4: st.markdown(f'<div class="stat-box"><div class="stat-val">Stable</div><div class="stat-lab">Durum</div></div>', unsafe_allow_html=True)
-    
     st.divider(); st.markdown("### Hizmet Paneli")
-    # Quick Navigation Cards
     nc1, nc2, nc3 = st.columns(3)
     with nc1:
         st.markdown('<div class="nav-card"><h3>💬 Sohbet</h3><p style="font-size:0.8rem; opacity:0.7;">AI ile anında bilgi alın.</p></div>', unsafe_allow_html=True)
         if st.button("AI Sohbet Paneli", use_container_width=True, key="nh_chat"): navigate_to("AI Sohbet")
     with nc2:
-        st.markdown('<div class="nav-card"><h3>📝 Sınav</h3><p style="font-size:0.8rem; opacity:0.7;">Otomatik quizler hazırlayın.</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="nav-card"><h3>📝 Sınav</h3><p style="font-size:0.8rem; opacity:0.7;">Quizler hazırlayın.</p></div>', unsafe_allow_html=True)
         if st.button("Hemen Quiz Hazırla", use_container_width=True, key="nh_quiz"): navigate_to("Quiz Hazirla")
     with nc3:
-        st.markdown('<div class="nav-card"><h3>📊 Analiz</h3><p style="font-size:0.8rem; opacity:0.7;">Gerçek zamanlı başarı takibi.</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="nav-card"><h3>📊 Analiz</h3><p style="font-size:0.8rem; opacity:0.7;">Başarı takibi.</p></div>', unsafe_allow_html=True)
         if st.button("Verileri İncele", use_container_width=True, key="nh_ana"): navigate_to("Veri Analizi")
 
 elif st.session_state.page == "AI Sohbet":
@@ -137,23 +145,24 @@ elif st.session_state.page == "AI Sohbet":
             st.markdown(res); add_chat_message(db, "assistant", res, ai_p)
 
 elif st.session_state.page == "Quiz Hazirla":
-    st.title("Sınav Hazırlayıcı"); st.markdown('<div class="settings-card">', unsafe_allow_html=True)
+    st.title("Sınav Hazırlayıcı")
     c1, c2 = st.columns([0.7, 0.3])
     with c1: topic = st.text_input("Sınav Başlığı")
     with c2: q_count = st.slider("Adet", 3, 20, 5)
-    if st.button("Sınav Oluştur", use_container_width=True, type="primary"):
+    if st.button("AI Sınav Oluştur", use_container_width=True, type="primary"):
         if topic:
             with st.spinner("AI Yanıtlıyor..."):
                 st.session_state.quiz_content = ai_service.ask(f"{topic} hakkında {q_count} soruluk test hazırla.", temp=st.session_state.ai_temp, tokens=st.session_state.ai_tokens)
                 st.session_state.current_quiz_title = topic
-    st.markdown('</div>', unsafe_allow_html=True)
     if st.session_state.quiz_content:
         st.markdown('<div class="settings-card">', unsafe_allow_html=True); st.markdown(st.session_state.quiz_content)
-        cs1, cs2 = st.columns(2)
         if st.button("Simülasyon Başlat (15 Öğrenci)", use_container_width=True):
-            db_gen = get_db(); db = next(db_gen); core_simulate(db, subjects_override=st.session_state.current_quiz_title)
+            db_gen = get_db(); db = next(db_gen)
+            # Shared Simulator Logic
+            names = ["Ahmet","Fatma","Can","Selin","Burak","Elif","Mehmet","Ayşe","Deniz","Zeynep","Emir","Melis","Okan","Gizem","Arda"]
+            for n in names: add_quiz_result(db, st.session_state.current_quiz_title, n, random.randint(72,100))
             st.success("Bütün sınıf sınavı çözdü!"); st.balloons()
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.page == "Ders Materyalleri":
     st.title("Ders Arşivi"); db_gen = get_db(); db = next(db_gen); courses = get_all_courses(db)
@@ -161,45 +170,28 @@ elif st.session_state.page == "Ders Materyalleri":
         for c in courses: 
             with st.expander(c.title): st.markdown(f"**{c.description}**\n\n{c.content}")
     else:
-        if st.button("15 Örnek Branşı Hemen Yükle", type="primary", use_container_width=True): populate_demo_courses(db); st.rerun()
+        if st.button("15 Örnek Branşı Hemen Yükle", type="primary", use_container_width=True):
+            demo = [("Matematik", "Kalkülüs", "Limit ve Türev..."), ("Fizik", "Newton", "Kuvvet Kanunları..."), ("Yazılım", "Python", "Giriş..."), ("AI", "Deep Learning", "Yapay Sinir Ağları..."), ("Kimya", "Periyodik Tablo", "Element Analizi...")]
+            for t, d, c in demo: add_sample_course(db, t, d, c)
+            st.rerun()
 
 elif st.session_state.page == "Veri Analizi":
-    st.title("Gelişmiş Analiz Paneli"); db_gen = get_db(); db = next(db_gen); quiz_res = get_quiz_results(db); courses = get_all_courses(db)
-    t1, t2 = st.tabs(["Ders Başarı Göstergeleri", "Manuel Puan Girişi"])
+    st.title("Başarı Paneli"); db_gen = get_db(); db = next(db_gen); quiz_res = get_quiz_results(db)
+    t1, t2 = st.tabs(["Performans", "Not Girişi"])
     with t1:
         if quiz_res:
             res_df = pd.DataFrame([{"Öğrenci": r.student_name, "Puan": r.score, "Ders": r.quiz_title} for r in quiz_res])
-            m1, m2, m3 = st.columns(3); m1.metric("Sınıf Ortalaması", round(res_df["Puan"].mean(), 1)); m2.metric("En Yüksek Puan", res_df["Puan"].max())
-            last = res_df.iloc[0]; m3.metric("Son Girilen", f"{last['Puan']}", delta=f"{last['Öğrenci']} ({last['Ders']})")
-            st.bar_chart(res_df.set_index("Öğrenci")["Puan"], color=accent)
-            st.dataframe(res_df, use_container_width=True)
-        else:
-            if st.button("15 Branş Simülasyonu Başlat", use_container_width=True, type="primary"): core_simulate(db); st.rerun()
-    with t2:
-        with st.form("man_entry"):
-            name = st.text_input("Öğrenci"); quiz = st.text_input("Ders"); score = st.number_input("Puan", 0, 100, 85)
-            if st.form_submit_button("Sonucu Kaydet"): 
-                add_quiz_result(db, quiz, name, score); st.success("Kaydedildi!"); st.rerun()
+            m1, m2 = st.columns(2); m1.metric("Ortalama", round(res_df["Puan"].mean(), 1)); m2.metric("En Yüksek", res_df["Puan"].max())
+            st.bar_chart(res_df.set_index("Öğrenci")["Puan"], color=accent); st.dataframe(res_df, use_container_width=True)
+        else: st.info("Simülasyon butonunu kullanın.")
 
 elif st.session_state.page == "Ayarlar":
-    st.title("Denetleme Masası")
-    st.markdown('<div class="settings-card"><h4>AI Profil & Görünüm</h4>', unsafe_allow_html=True)
+    st.title("Ayarlar")
+    st.markdown('<div class="settings-card"><h4>AI & Görünüm</h4>', unsafe_allow_html=True)
     st.session_state.ai_system = st.text_area("Yapay Zeka Rolü", value=st.session_state.ai_system)
-    c1, c2 = st.columns(2)
-    with c1: st.session_state.ai_temp = st.slider("Temperature", 0.0, 1.0, st.session_state.ai_temp, 0.1)
-    with c2: st.session_state.ai_tokens = st.select_slider("Maksimum Tokens", options=[256, 512, 1024, 2048, 4096, 8192], value=st.session_state.ai_tokens)
-    st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown('<div class="settings-card"><h4>Arayüz Tasarımı</h4>', unsafe_allow_html=True)
-    col_u1, col_u2 = st.columns(2)
-    with col_u1:
-        c_map = {"Mavi": "#1f77b4", "Yeşil": "#2ecc71", "Mor": "#9b59b6", "Turuncu": "#e67e22", "Kırmızı": "#e74c3c"}
-        sel = st.selectbox("Renk Teması", list(c_map.keys()), index=list(c_map.values()).index(st.session_state.ui_accent))
-        if c_map[sel] != st.session_state.ui_accent: st.session_state.ui_accent = c_map[sel]; st.rerun()
-    with col_u2: st.session_state.ui_glass = st.slider("Cam Yoğunluğu", 0.0, 1.0, st.session_state.ui_glass, 0.1)
-    st.markdown('</div>', unsafe_allow_html=True)
-    if st.button("Ayarları Kalıcı Kaydet", type="primary", use_container_width=True):
-        save_settings_to_disk({'ui_accent': st.session_state.ui_accent,'ai_temp': st.session_state.ai_temp,'ai_tokens': st.session_state.ai_tokens,'ai_system': st.session_state.ai_system,'ui_glass': st.session_state.ui_glass,'chart_type': st.session_state.chart_type,'default_model': st.session_state.default_model,'course_expanded': st.session_state.course_expanded,'pdf_pagenums': st.session_state.pdf_pagenums})
-        st.success("Ayarlar başarıyla kaydedildi!"); st.balloons()
+    if st.button("Kaydet ve Yenile"):
+        save_settings_to_disk({'ui_accent': st.session_state.ui_accent, 'ai_temp': st.session_state.ai_temp, 'ai_tokens': st.session_state.ai_tokens, 'ai_system': st.session_state.ai_system})
+        st.rerun()
     st.divider()
-    if st.button("Veritabanını Sıfırla (Fabrika Ayarları)", use_container_width=True):
+    if st.button("Tüm Verileri Sıfırla"):
         db_gen = get_db(); db = next(db_gen); from sqlalchemy import delete; from models import Course, ChatHistory, QuizResult; db.execute(delete(Course)); db.execute(delete(ChatHistory)); db.execute(delete(QuizResult)); db.commit(); st.rerun()

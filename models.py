@@ -12,6 +12,12 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     chats = relationship("ChatHistory", back_populates="user")
 
+class User(Base):
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True)
+    username = Column(String(50), unique=True)
+    password = Column(String(50))
+
 class Course(Base):
     __tablename__ = 'courses'
     id = Column(Integer, primary_key=True)

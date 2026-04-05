@@ -11,9 +11,9 @@ class AIService:
         self.gemini_key = os.getenv("GEMINI_API_KEY")
         if self.gemini_key:
             genai.configure(api_key=self.gemini_key)
-            # Using Gemini 2.0 Flash for speed and intelligence
+            # Using Gemini 1.5 Flash for better free-tier compatibility
             self.gemini_model = genai.GenerativeModel(
-                model_name='gemini-2.0-flash',
+                model_name='gemini-1.5-flash',
                 system_instruction="Sen gelişmiş bir AI Eğitim Asistanısın. Öğrencilere ve eğitmenlere akademik konularda, ders planlamada ve içerik üretiminde yardımcı olursun. Yanıtların profesyonel, yapıcı ve eğitici olmalıdır."
             )
         else:

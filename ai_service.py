@@ -11,10 +11,9 @@ class AIService:
         self.gemini_key = os.getenv("GEMINI_API_KEY")
         if self.gemini_key:
             genai.configure(api_key=self.gemini_key)
-            # Using 'gemini-flash-latest' to ensure compatibility with all free-tier regions
             self.gemini_model = genai.GenerativeModel(
                 model_name='gemini-flash-latest',
-                system_instruction="Sen gelişmiş bir AI Eğitim Asistanısın. Öğrencilere ve eğitmenlere akademik konularda, ders planlamada ve içerik üretiminde yardımcı olursun. Yanıtların profesyonel, yapıcı ve eğitici olmalıdır."
+                system_instruction="Sen gelişmiş bir AI Eğitim Asistanısın. Profesyonel, yapıcı ve eğitici yanıtlar vermelisin."
             )
         else:
             self.gemini_model = None
@@ -26,23 +25,21 @@ class AIService:
         else:
             self.groq_client = None
 
-    def chat_gemini(self, message):
+    def chat_gemini(self, message, temp=0.7, tokens=2048):
         if not self.gemini_model:
             return "Gemini API Key is not configured."
         try:
-            # Optimized generation config
             config = genai.types.GenerationConfig(
-                temperature=0.7,
+                temperature=temp,
                 top_p=0.9,
-                top_k=40,
-                max_output_tokens=2048,
+                max_output_tokens=tokens,
             )
             response = self.gemini_model.generate_content(message, generation_config=config)
             return response.text
         except Exception as e:
             return f"Gemini Error: {str(e)}"
 
-    def chat_groq(self, message, model="llama-3.3-70b-versatile"):
+    def chat_groq(self, message, model="llama-3.3-70b-versatile", temp=0.7, tokens=2048):
         if not self.groq_client:
             return "Groq API Key is not configured."
         try:
@@ -52,19 +49,19 @@ class AIService:
                     {"role": "user", "content": message}
                 ],
                 model=model,
-                temperature=0.7,
-                max_tokens=2048,
+                temperature=temp,
+                max_tokens=tokens,
                 top_p=0.9
             )
             return completion.choices[0].message.content
         except Exception as e:
             return f"Groq Error: {str(e)}"
 
-    def ask(self, message, provider="gemini"):
+    def ask(self, message, provider="gemini", temp=0.7, tokens=2048):
         if provider == "gemini":
-            return self.chat_gemini(message)
+            return self.chat_gemini(message, temp=temp, tokens=tokens)
         elif provider == "groq":
-            return self.chat_groq(message)
+            return self.chat_groq(message, temp=temp, tokens=tokens)
         else:
             return "Invalid AI provider selected."
 

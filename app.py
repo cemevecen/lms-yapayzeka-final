@@ -21,8 +21,6 @@ if 'page' not in st.session_state:
 
 def navigate_to(page_name):
     st.session_state.page = page_name
-    # Sync the radio widget by proxying its state key
-    st.session_state.nav_radio = page_name
     st.rerun()
 
 # Initialize Database
@@ -63,16 +61,18 @@ with st.sidebar:
     st.title("AI-LMS Dashboard")
     st.divider()
     
-    # Use session_state directly for the radio index
+    # Calculate index based on session state
+    current_index = pages.index(st.session_state.page)
     selected_page = st.radio(
         "Navigasyon", 
         pages, 
-        key="nav_radio"
+        index=current_index
     )
     
-    # When radio changes, update st.session_state.page
+    # Update session state if radio is clicked
     if selected_page != st.session_state.page:
         st.session_state.page = selected_page
+        st.rerun()
     
     st.divider()
 
@@ -88,13 +88,11 @@ def export_pdf(courses):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("helvetica", size=16)
-    # Correctly encoding the title for Turkish support in PDF
     header_text = "Ders Katalogu Raporu".encode('cp1254', 'ignore').decode('latin-1')
     pdf.cell(200, 10, txt=header_text, ln=True, align='C')
     pdf.ln(10)
     for c in courses:
         pdf.set_font("helvetica", style='B', size=12)
-        # Using cp1254 encoding for the Turkish content
         title_text = f"Ders: {c.title}".encode('cp1254', 'ignore').decode('latin-1')
         pdf.cell(200, 10, txt=title_text, ln=True)
         pdf.set_font("helvetica", size=10)
@@ -179,7 +177,7 @@ elif st.session_state.page == "Ders Materyalleri":
             with ecol2:
                 try:
                     pdf_data = export_pdf(courses)
-                    st.download_button(label="PDF Olarak Indir", data=pdf_data, file_name=f"dersler_{datetime.now().strftime('%d%m%y')}.pdf", mime="application/pdf", use_container_width=True)
+                    st.download_button(label="PDF Olarak Indir", data=pdf_data, file_name=f"dersler_{datetime.now().strftime('%d%m%y')}.pdf", mime="application/pdf", key="pdf_dl", use_container_width=True)
                 except Exception as e:
                     st.error(f"PDF Olusturma Hatasi: {str(e)}")
             st.markdown('</div>', unsafe_allow_html=True)
@@ -227,12 +225,12 @@ elif st.session_state.page == "Ayarlar":
     st.markdown('<div class="settings-card">', unsafe_allow_html=True)
     st.subheader("Veri Yonetimi"); dcol1, dcol2 = st.columns(2)
     with dcol1:
-        if st.button("Veritabanini Sifirla", type="primary", use_container_width=True):
+        if st.button("Veritabanini Sifirla", type="primary", use_container_width=True, key="reset_btn"):
             db_gen = get_db(); db = next(db_gen)
             from sqlalchemy import delete; from models import Course, ChatHistory
             db.execute(delete(Course)); db.execute(delete(ChatHistory)); db.commit(); st.rerun()
     with dcol2:
-        if st.button("Temiz Ornek Veri Yukle", use_container_width=True):
+        if st.button("Ornek Veri Yukle", use_container_width=True, key="sample_btn"):
             db_gen = get_db(); db = next(db_gen)
             sc = [{"title": "Cografya", "desc": "Dogal kaynaklar.", "content": "Iklim ve eko-sistemler."}, {"title": "Matematik", "desc": "Kalkulus.", "content": "Turev ve integral."}]
             for c in sc: add_sample_course(db, c["title"], c["desc"], c["content"])

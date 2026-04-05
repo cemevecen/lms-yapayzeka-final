@@ -15,43 +15,61 @@ st.set_page_config(
 # Initialize Database
 init_db()
 
-# Custom CSS for Premium Look
+# Custom CSS for Premium & Theme-Aware Look
 st.markdown("""
 <style>
-    .main {
-        background-color: #f5f7f9;
-    }
+    /* Main Background - Adaptive */
     .stApp {
-        background: linear-gradient(135deg, #f5f7f9 0%, #eef2f3 100%);
+        background: var(--background-content-color);
     }
-    .stSidebar {
-        background-color: #ffffff !important;
-        border-right: 1px solid #e0e0e0;
+    
+    /* Sidebar styling */
+    [data-testid="stSidebar"] {
+        background-color: var(--secondary-background-color);
+        border-right: 1px solid var(--divider-color);
     }
+    
+    /* Stat Cards - Glassmorphism */
     .stat-card {
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        border: 1px solid #eee;
+        background: var(--secondary-background-color);
+        padding: 24px;
+        border-radius: 16px;
+        border: 1px solid var(--divider-color);
         text-align: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        border-color: #1f77b4;
     }
     .stat-value {
-        font-size: 24px;
-        font-weight: bold;
+        font-size: 28px;
+        font-weight: 800;
         color: #1f77b4;
+        margin-bottom: 4px;
     }
     .stat-label {
         font-size: 14px;
-        color: #666;
+        color: var(--text-color);
+        opacity: 0.8;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
+    
+    /* Buttons */
     .stButton>button {
-        border-radius: 8px;
-        transition: all 0.3s ease;
+        border-radius: 10px;
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+        transition: all 0.2s ease;
     }
-    .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    
+    /* Title styling */
+    h1, h2, h3 {
+        font-family: 'Inter', sans-serif;
     }
 </style>
 """, unsafe_allow_html=True)

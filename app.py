@@ -260,5 +260,42 @@ elif selected_page == "⚙ Ayarlar":
     if st.button("Örnek Veri Yükle"):
         db_gen = get_db()
         db = next(db_gen)
-        add_sample_course(db, "Yapay Zekaya Giriş", "Temel kavramlar", "Yapay zeka, makinelerin insan zekasını taklit etmesidir...")
-        st.success("Örnek veriler yüklendi.")
+        
+        sample_courses = [
+            {
+                "title": "🌍 Coğrafya: Ekosistemler ve İklim",
+                "desc": "Küresel iklim dengesi, biyomlar ve sürdürülebilirlik üzerine derinlemesine bir bakış.",
+                "content": "Bu derste Dünya'nın iklim sistemlerini ve ekosistem çeşitliliğini inceleyeceğiz. \n\n1. Biyomlar: Çöl, Tropikal Orman, Savan ve Tundra ekosistemlerinin özellikleri.\n2. Atmosferin Yapısı: Troposfer'den Eksosfer'e katmanlar ve hava olayları.\n3. İklim Değişikliği: Sera etkisi, karbon ayak izi ve küresel ısınmanın ekolojik sonuçları.\n4. Sürdürülebilirlik: Doğal kaynakların korunması ve yenilenebilir enerji kaynaklarının coğrafi dağılımı."
+            },
+            {
+                "title": "📖 Edebiyat: Tanzimat'tan Günümüze Türk Şiiri",
+                "desc": "Türk edebiyatının modernleşme sürecindeki şiir gelenekleri ve akımları.",
+                "content": "Türk şiirinin evrimini dönemler bazında analiz ediyoruz.\n\n1. Tanzimat Şiiri: Namık Kemal'den Şinasi'ye 'Hak, Adalet, Hürriyet' temaları.\n2. Servet-i Fünun: Tevfik Fikret ve Cenap Şahabettin ile imgeci anlayış.\n3. Garip Akımı: Orhan Veli döneminde şiirde sadelik ve sıradan insanın hikayesi.\n4. İkinci Yeni: Ece Ayhan ve Turgut Uyar ile soyutlama ve dilin sınırları."
+            },
+            {
+                "title": "🔢 Matematik: Kalkülüs ve Uygulamaları",
+                "desc": "Türev ve integral kavramlarının mühendislik ve fizik dünyasındaki yeri.",
+                "content": "Matematiğin en güçlü araçlarından biri olan analiz dünyasına giriş.\n\n1. Limit ve Süreklilik: Fonksiyonların davranış sınırları.\n2. Türev: Değişim hızı kavramı, eğim analizi ve optimizasyon problemleri.\n3. İntegral: Alan hesabı, biriken toplamlar ve fiziksel iş tanımı.\n4. Diferansiyel Denklemler: Doğal olayların matematiksel modellenmesi."
+            },
+            {
+                "title": "🎨 Resim: Rönesans'tan Modern Sanata",
+                "desc": "Sanat tarihinin dönüm noktaları, teknikler ve büyük ustalar.",
+                "content": "Görsel sanatların tarihsel sürecine ışık tutuyoruz.\n\n1. Rönesans: Leonardo, Michelangelo ve oran-perspektif devrimi.\n2. Barok: Işık-gölge oyunları ve Caravaggio estetiği.\n3. Empresyonizm: Işığın anlık etkisi, Monet ve fırça darbesi özgürlüğü.\n4. Kübizm ve Sürrealizm: Picasso'nun parçalanmış dünyası ve Dali'nin rüyaları."
+            },
+            {
+                "title": "🎶 Müzik: Batı Klasik Müziği ve Armoni",
+                "desc": "Müzik teorisi, armoni kuralları ve klasik müzik dönemleri.",
+                "content": "Seslerin matematiğini ve tarihin ritmini keşfedin.\n\n1. Barok Dönem: J.S. Bach ve kontrpuan sanatı.\n2. Klasik Dönem: Mozart ve Haydn ile 'Sonat Formu'nun mükemmelliği.\n3. Romantik Dönem: Beethoven'ın tutkusu ve Chopin'in melodik derinliği.\n4. 20. Yüzyıl Müziği: Cazın doğuşu ve atonalite çalışmaları."
+            },
+            {
+                "title": "⚗️ Kimya: Organik Kimya ve Karbon",
+                "desc": "Hayatın temelini oluşturan karbon bileşiklerinin yapısı ve tepkimeleri.",
+                "content": "Yaşamın yapı taşlarını moleküler düzeyde inceleyin.\n\n1. Karbonun Özellikleri: Hibritleşme ve bağ yapıları.\n2. Hidrokarbonlar: Alkan, Alken ve Alkinlerin isimlendirilmesi.\n3. Fonksiyonel Gruplar: Alkoller, Eterler ve Karbonil bileşikleri.\n4. Biyomoleküller: Proteinlerin, peptidlerin ve lipidlerin kimyasal doğası."
+            }
+        ]
+        
+        for c in sample_courses:
+            add_sample_course(db, c["title"], c["desc"], c["content"])
+            
+        st.success(f"{len(sample_courses)} adet zengin içerikli ders başarıyla yüklendi!")
+        st.rerun()

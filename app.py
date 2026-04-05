@@ -90,28 +90,90 @@ with st.sidebar:
 
 # --- PAGE: HOME ---
 if selected_page == "🏠 Ana Sayfa":
-    st.title("Hoş Geldiniz! 👋")
-    st.subheader("Eğitimde Yapay Zeka Entegrasyonu")
+    # Hero Section with Banner
+    st.image("assets/banner.png", use_container_width=True)
     
-    # Stats row
+    st.markdown("""
+    <div style="text-align: center; padding: 20px 0;">
+        <h1 style="font-size: 3rem; margin-bottom: 0;">LMS Yapay Zeka Final</h1>
+        <p style="font-size: 1.2rem; opacity: 0.8;">Eğitimde Yeni Nesil Yapay Zeka Deneyimi</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Advanced Stats row
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.markdown('<div class="stat-card"><div class="stat-value">12</div><div class="stat-label">Toplam Ders</div></div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="stat-card">
+            <div style="font-size: 40px;">📚</div>
+            <div class="stat-value">12</div>
+            <div class="stat-label">Toplam Ders</div>
+        </div>
+        """, unsafe_allow_html=True)
     with col2:
-        st.markdown('<div class="stat-card"><div class="stat-value">156</div><div class="stat-label">Öğrenci Sayısı</div></div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="stat-card">
+            <div style="font-size: 40px;">👨‍🎓</div>
+            <div class="stat-value">156</div>
+            <div class="stat-label">Öğrenci Sayısı</div>
+        </div>
+        """, unsafe_allow_html=True)
     with col3:
-        st.markdown('<div class="stat-card"><div class="stat-value">4.8</div><div class="stat-label">Ortalama Puan</div></div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="stat-card">
+            <div style="font-size: 40px;">⭐</div>
+            <div class="stat-value">4.8</div>
+            <div class="stat-label">Ortalama Puan</div>
+        </div>
+        """, unsafe_allow_html=True)
     with col4:
-        st.markdown('<div class="stat-card"><div class="stat-value">850+</div><div class="stat-label">AI Yanıtı</div></div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="stat-card">
+            <div style="font-size: 40px;">⚡</div>
+            <div class="stat-value">850+</div>
+            <div class="stat-label">AI Yanıtı</div>
+        </div>
+        """, unsafe_allow_html=True)
         
     st.divider()
     
-    st.markdown("""
-    ### 🚀 Neler Yapabilirsiniz?
-    - **Akıllı Sohbet:** Gemini veya Groq modelleri ile dersleriniz hakkında soru sorun.
-    - **İçerik Üretimi:** Yapay zeka ile otomatik ders özetleri ve sınav soruları oluşturun.
-    - **Veri Analizi:** Eğitim performansınızı yapay zeka destekli grafiklerle takip edin.
-    """)
+    st.markdown("### 🚀 Platform Özellikleri")
+    
+    # Feature Cards
+    fcol1, fcol2, fcol3 = st.columns(3)
+    
+    with fcol1:
+        st.markdown("""
+        <div style="background: var(--secondary-background-color); padding: 30px; border-radius: 20px; border: 1px solid var(--divider-color); height: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center;">
+            <div style="background: rgba(31, 119, 180, 0.1); width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                <span style="font-size: 30px;">💬</span>
+            </div>
+            <h4>Akıllı Sohbet</h4>
+            <p style="font-size: 0.9rem; opacity: 0.8;">Gemini ve Groq modelleri ile dersleriniz hakkında anlık soru-cevap asistanlığı.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    with fcol2:
+        st.markdown("""
+        <div style="background: var(--secondary-background-color); padding: 30px; border-radius: 20px; border: 1px solid var(--divider-color); height: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center;">
+            <div style="background: rgba(46, 204, 113, 0.1); width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                <span style="font-size: 30px;">✍️</span>
+            </div>
+            <h4>İçerik Üretimi</h4>
+            <p style="font-size: 0.9rem; opacity: 0.8;">Tek tıkla ders özetleri, sınav soruları ve çalışma notları oluşturma.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    with fcol3:
+        st.markdown("""
+        <div style="background: var(--secondary-background-color); padding: 30px; border-radius: 20px; border: 1px solid var(--divider-color); height: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center;">
+            <div style="background: rgba(155, 89, 182, 0.1); width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                <span style="font-size: 30px;">📊</span>
+            </div>
+            <h4>Veri Analizi</h4>
+            <p style="font-size: 0.9rem; opacity: 0.8;">Eğitim performansınızı yapay zeka destekli grafiklerle takip edin.</p>
+        </div>
+        """, unsafe_allow_html=True)
 
 # --- PAGE: AI CHAT ---
 elif selected_page == "💬 AI Sohbet":

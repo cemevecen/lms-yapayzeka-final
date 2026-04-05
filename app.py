@@ -3,6 +3,7 @@ import pandas as pd
 from database import init_db, get_db, add_chat_message, get_chat_history, add_sample_course, get_all_courses, delete_course
 from ai_service import ai_service
 import os
+from datetime import datetime
 
 # Page Configuration
 st.set_page_config(
@@ -58,6 +59,28 @@ st.markdown("""
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
+    
+    /* Settings Cards */
+    .settings-card {
+        background: var(--secondary-background-color);
+        padding: 30px;
+        border-radius: 20px;
+        border: 1px solid var(--divider-color);
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    
+    /* Status Badges */
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight:600;
+        margin-left: 10px;
+    }
+    .status-active { background: #2ecc71; color: white; }
+    .status-passive { background: #e74c3c; color: white; }
     
     /* Buttons */
     .stButton>button {
@@ -250,22 +273,48 @@ elif selected_page == "Ders Materyalleri":
 
 # --- PAGE: SETTINGS ---
 elif selected_page == "Ayarlar":
-    st.title("Platform Ayarları")
-    st.subheader("API Yapılandırması")
+    st.title("Sistem Yonetimi")
+    st.caption("Platform ayarlarini ve veri akisini buradan kontrol edin.")
     
-    gemini_key = os.getenv("GEMINI_API_KEY", "")
-    groq_key = os.getenv("GROQ_API_KEY", "")
-    st.toggle("Gemini Aktif", value=bool(gemini_key), disabled=True)
-    st.toggle("Groq Aktif", value=bool(groq_key), disabled=True)
+    # Section 1: API Configuration
+    st.markdown('<div class="settings-card">', unsafe_allow_html=True)
+    st.subheader("API Yapilandirmasi")
     
-    st.info("API anahtarları .env dosyası üzerinden yönetilmektedir.")
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    groq_key = os.getenv("GROQ_API_KEY")
     
-    st.divider()
+    acol1, acol2 = st.columns(2)
+    with acol1:
+        status_css = "status-active" if gemini_key else "status-passive"
+        status_text = "AKTIF" if gemini_key else "PASIF"
+        st.markdown(f"""
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: rgba(0,0,0,0.05); border-radius: 10px;">
+                <span>Google Gemini API</span>
+                <span class="status-badge {status_css}">{status_text}</span>
+            </div>
+        """, unsafe_allow_html=True)
+        
+    with acol2:
+        status_css = "status-active" if groq_key else "status-passive"
+        status_text = "AKTIF" if groq_key else "PASIF"
+        st.markdown(f"""
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: rgba(0,0,0,0.05); border-radius: 10px;">
+                <span>Groq Llama 3 API</span>
+                <span class="status-badge {status_css}">{status_text}</span>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    st.info("API anahtarlari .env dosyasi üzerinden guvenli bir sekilde yonetilmektedir.")
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Section 2: Data Management
+    st.markdown('<div class="settings-card">', unsafe_allow_html=True)
     st.subheader("Veri Yonetimi")
-    col_reset, col_sample = st.columns(2)
+    st.write("Veritabanindaki tum kayitlari temizleyebilir veya ornek ders iceriklerini yukleyebilirsin.")
     
-    with col_reset:
-        if st.button("Veritabanini Sifirla (Tumunu Sil)", type="primary"):
+    dcol1, dcol2 = st.columns(2)
+    with dcol1:
+        if st.button("Veritabanini Sifirla (Tumunu Sil)", type="primary", use_container_width=True):
             db_gen = get_db()
             db = next(db_gen)
             from sqlalchemy import delete
@@ -273,11 +322,11 @@ elif selected_page == "Ayarlar":
             db.execute(delete(Course))
             db.execute(delete(ChatHistory))
             db.commit()
-            st.warning("Tum veriler silindi.")
+            st.warning("Veritabani tamamen bosaltildi.")
             st.rerun()
-
-    with col_sample:
-        if st.button("Temiz Ornek Veri Yukle"):
+            
+    with dcol2:
+        if st.button("Temiz Ornek Veri Yukle", use_container_width=True):
             db_gen = get_db()
             db = next(db_gen)
             sample_courses = [
@@ -292,3 +341,13 @@ elif selected_page == "Ayarlar":
                 add_sample_course(db, c["title"], c["desc"], c["content"])
             st.success("Ornek veriler yuklendi!")
             st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Section 3: System Info
+    st.markdown('<div class="settings-card">', unsafe_allow_html=True)
+    st.subheader("Sistem Bilgisi")
+    scol1, scol2, scol3 = st.columns(3)
+    scol1.metric("Versiyon", "v1.0.0")
+    scol2.metric("Durum", "Kararli")
+    scol3.metric("Son Guncelleme", datetime.now().strftime("%d/%m/%Y"))
+    st.markdown('</div>', unsafe_allow_html=True)

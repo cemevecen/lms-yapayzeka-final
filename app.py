@@ -9,6 +9,19 @@ import json
 from datetime import datetime
 from fpdf import FPDF
 
+ADMIN_USER = "admin"
+ADMIN_PASSWORD = "admin"
+
+def _admin_credentials():
+    """Varsayılan admin/admin; Streamlit Cloud Secrets ile override edilebilir."""
+    try:
+        sc = st.secrets
+        u = sc["ADMIN_USER"] if "ADMIN_USER" in sc else ADMIN_USER
+        p = sc["ADMIN_PASSWORD"] if "ADMIN_PASSWORD" in sc else ADMIN_PASSWORD
+        return str(u), str(p)
+    except Exception:
+        return ADMIN_USER, ADMIN_PASSWORD
+
 # --- PERSISTENT SETTINGS ---
 SETTINGS_FILE = "persistent_settings.json"
 def load_settings():
@@ -33,8 +46,32 @@ states = {
 }
 for k, v in states.items():
     if k not in st.session_state: st.session_state[k] = v
+if "admin_authenticated" not in st.session_state:
+    st.session_state.admin_authenticated = False
 
 st.set_page_config(page_title="LMS Yapay Zeka Pro", page_icon=None, layout="wide", initial_sidebar_state="expanded")
+
+# Giriş önce: canlıda init_db/CSS hatası olsa bile kullanıcı önce bu ekranı görsün
+if not st.session_state.admin_authenticated:
+    au, ap = _admin_credentials()
+    with st.sidebar:
+        st.title("AI-LMS Pro")
+        st.divider()
+        st.subheader("Yönetici")
+        st.caption("Yönetici bilgilerinizle giriş yapın.")
+        with st.form("admin_login"):
+            u = st.text_input("Kullanıcı adı", key="login_user")
+            pw = st.text_input("Şifre", type="password", key="login_pass")
+            if st.form_submit_button("Giriş yap", type="primary", use_container_width=True):
+                if u == au and pw == ap:
+                    st.session_state.admin_authenticated = True
+                    st.rerun()
+                else:
+                    st.error("Kullanıcı adı veya şifre hatalı.")
+    st.markdown("# LMS Yapay Zeka Pro")
+    st.info("Soldaki **Yönetici** bölümünden giriş yapın; girişten sonra **Navigasyon** görünür.")
+    st.stop()
+
 init_db()
 
 accent = st.session_state.ui_accent
@@ -68,8 +105,16 @@ def navigate_to(pname): st.session_state.page = pname; st.rerun()
 # Navigation
 pages = ["Ana Sayfa", "AI Sohbet", "Ders Materyalleri", "Quiz Hazirla", "Veri Analizi", "Ayarlar"]
 with st.sidebar:
-    st.title("AI-LMS Pro"); st.divider()
-    s_page = st.radio("Navigasyon", pages, index=pages.index(st.session_state.page))
+    st.title("AI-LMS Pro")
+    st.divider()
+    st.subheader("Yönetici")
+    st.success("Oturum açık")
+    if st.button("Çıkış yap", use_container_width=True, key="btn_logout"):
+        st.session_state.admin_authenticated = False
+        st.rerun()
+    st.divider()
+    st.subheader("Navigasyon")
+    s_page = st.radio("Sayfa seçin", pages, index=pages.index(st.session_state.page), label_visibility="collapsed")
     if s_page != st.session_state.page: st.session_state.page = s_page; st.rerun()
 
 # --- PAGES ---

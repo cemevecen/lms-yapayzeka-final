@@ -13,5 +13,5 @@ venv/
 .vscode/
 .idea/
 
-# Streamlit
-.streamlit/
+# Streamlit (config.toml repoda; anahtarlar burada tutulmaz)
+.streamlit/secrets.toml

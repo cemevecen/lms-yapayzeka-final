@@ -36,7 +36,7 @@ states = {
 for k, v in states.items():
     if k not in st.session_state: st.session_state[k] = v
 
-st.set_page_config(page_title="LMS Yapay Zeka Final", page_icon=None, layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="LMS Yapay Zeka Pro", page_icon=None, layout="wide", initial_sidebar_state="expanded")
 def navigate_to(pname): st.session_state.page = pname; st.rerun()
 init_db()
 
@@ -51,76 +51,76 @@ st.markdown(f"""
         background: rgba(255, 255, 255, {glass*0.05 if glass < 1 else 0.1}); 
         backdrop-filter: blur({glass*10}px); padding: 25px; border-radius: 20px; border: 1px solid var(--divider-color); margin-bottom: 20px; 
     }}
-    .stat-card {{ background: var(--secondary-background-color); padding: 24px; border-radius: 16px; border: 1px solid var(--divider-color); text-align: center; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }}
-    .stat-card:hover {{ transform: translateY(-5px); border-color: {accent}; }}
-    .stat-value {{ font-size: 28px; font-weight: 800; color: {accent}; }}
-    .stButton>button {{ border-radius: 10px; font-weight: 600; transition: all 0.2s ease; border: 1px solid {accent}; }}
+    .hero-card {{
+        background: linear-gradient(135deg, {accent} 0%, #2c3e50 100%);
+        padding: 40px; border-radius: 30px; text-align: center; color: white; margin-bottom: 30px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    }}
+    .stat-box {{
+        background: var(--secondary-background-color); padding: 20px; border-radius: 15px; border: 1px solid var(--divider-color);
+        text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); min-width: 150px;
+    }}
+    .stat-val {{ font-size: 32px; font-weight: 850; color: {accent}; }}
+    .stat-lab {{ font-size: 14px; opacity: 0.7; font-weight: 600; text-transform: uppercase; }}
+    .nav-card {{
+        background: var(--secondary-background-color); padding: 25px; border-radius: 20px; border: 1px solid var(--divider-color);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; text-align: center; height: 180px;
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+    }}
+    .nav-card:hover {{ transform: translateY(-10px); border-color: {accent}; box-shadow: 0 12px 24px rgba(0,0,0,0.1); }}
+    .stButton>button {{ border-radius: 12px; font-weight: 600; transition: all 0.2s; border: 1px solid {accent}; }}
 </style>
 """, unsafe_allow_html=True)
 
-# Shared Core Functions
+# Shared Cores
 def populate_demo_courses(db):
-    demo_data = [
-        ("Matematik", "Kalkülüs ve Limit", "Matematiğin en güçlü araçlarından biri olan analiz dünyasına giriş..."),
-        ("Fizik", "Newton Yasaları", "Kuvvet, hareket ve enerjinin temel prensiplerini keşfedin..."),
-        ("Biyoloji", "Hücre Teorisi", "Yaşamın temel birimi olan hücrelerin gizemli dünyası..."),
-        ("Edebiyat", "Tanzimat Dönemi", "Türk edebiyatının modernleşme sürecine detaylı bakış..."),
-        ("Kimya", "Periyodik Tablo", "Elementlerin dünyası ve atomik yapıların şifreleri..."),
-        ("Tarih", "Osmanlı Kuruluş", "Küçük bir beylikten cihan imparatorluğuna uzanan yol..."),
-        ("Coğrafya", "İklim Sistemleri", "Dünyanın hava olayları ve ekosistem çeşitliliği..."),
-        ("İngilizce", "Gramer Yapıları", "Uluslararası iletişimin anahtar kuralları ve pratikler..."),
-        ("Yazılım", "Python Temelleri", "Programlamaya giriş ve modern yazılım dünyası..."),
-        ("Yapay Zeka", "Derin Öğrenme", "Sinir ağları ve geleceğin teknolojilerine giriş..."),
-        ("Geometri", "Üçgenlerde Alan", "Şekillerin matematiği ve görsel analiz yeteneği..."),
-        ("Felsefe", "Varlık Felsefesi", "Düşüncenin sınırlarında varoluşsal bir yolculuk..."),
-        ("Sanat", "Rönesans Dönemi", "Görsel sanatların ve kültürün yeniden doğuşu..."),
-        ("Müzik", "Armoni ve Ritim", "Seslerin matematiği ve tarihin ritmi..."),
-        ("Ekonomi", "Makroekonomi Giriş", "Piyasalar, arz-talep ve küresel finansal sistemler...")
-    ]
-    for t, d, c in demo_data: add_sample_course(db, t, d, c)
+    demo = [("Matematik", "Kalkülüs", "Analiz dünyası..."), ("Fizik", "Newton", "Prensipler..."), ("Yazılım", "Python", "Giriş..."), ("Yapay Zeka", "Deep Learning", "Gelecek..."), ("Kimya", "Periyodik", "Elementler...")]
+    for t, d, c in demo: add_sample_course(db, t, d, c)
     return True
-
 def core_simulate(db, subjects_override=None):
     names = ["Ahmet","Fatma","Can","Selin","Burak","Elif","Mehmet","Ayşe","Deniz","Zeynep","Emir","Melis","Okan","Gizem","Arda"]
-    subjects = ["Matematik", "Fizik", "Biyoloji", "Edebiyat", "Tarih", "Coğrafya", "Kimya", "İngilizce", "Yazılım", "Yapay Zeka", "Geometri", "Felsefe", "Sanat", "Müzik", "Ekonomi"]
+    subjects = ["Matematik", "Fizik", "Yazılım", "Yapay Zeka", "Kimya", "Edebiyat", "Tarih", "Biyoloji"]
     for i, n in enumerate(names):
         subj = subjects_override if subjects_override else subjects[i % len(subjects)]
         add_quiz_result(db, subj, n, random.randint(72,100))
     return True
 
-# Navigation logic
+# Navigation
 pages = ["Ana Sayfa", "AI Sohbet", "Ders Materyalleri", "Quiz Hazirla", "Veri Analizi", "Ayarlar"]
 with st.sidebar:
     st.title("AI-LMS Pro"); st.divider()
     s_page = st.radio("Navigasyon", pages, index=pages.index(st.session_state.page))
     if s_page != st.session_state.page: st.session_state.page = s_page; st.rerun()
 
-def tr_fix(text):
-    c = {"ğ":"g","Ğ":"G","ı":"i","İ":"I","ş":"s","Ş":"S","ü":"u","Ü":"U","ö":"o","Ö":"O","ç":"c","Ç":"C"}
-    for k, v in c.items(): text = text.replace(k, v)
-    return text
-
-def export_pdf(content, title="Rapor"):
-    pdf = FPDF()
-    pdf.add_page(); pdf.set_font("helvetica", style='B', size=16); pdf.cell(200, 10, txt=tr_fix(title), ln=True, align='C'); pdf.ln(10)
-    pdf.set_font("helvetica", size=11); pdf.multi_cell(0, 10, txt=tr_fix(content))
-    return pdf.output()
-
 # --- PAGES ---
 if st.session_state.page == "Ana Sayfa":
     db_gen = get_db(); db = next(db_gen); courses = get_all_courses(db); history = get_chat_history(db)
-    st.markdown(f'<div style="text-align:center; padding:20px 0;"><h1 style="font-size:3rem; margin-bottom:0; color:{accent};">LMS Yapay Zeka Final</h1><p style="font-size:1.2rem; opacity:0.8;">Premium Eğitim Platformu</p></div>', unsafe_allow_html=True)
-    c1, c2 = st.columns(2)
-    with c1: st.markdown(f'<div class="stat-card"><div class="stat-value">{len(courses)}</div><div class="stat-label">Dersler</div></div>', unsafe_allow_html=True)
-    with c2: st.markdown(f'<div class="stat-card"><div class="stat-value">{len(history)}</div><div class="stat-label">AI Mesajları</div></div>', unsafe_allow_html=True)
-    st.divider(); st.markdown("### Menü")
-    mc1, mc2, mc3 = st.columns(3);
-    with mc1: 
-        if st.button("AI Sohbet", use_container_width=True): navigate_to("AI Sohbet")
-    with mc2: 
-        if st.button("Sınav Hazırla", use_container_width=True): navigate_to("Quiz Hazirla")
-    with mc3: 
-        if st.button("Analizler", use_container_width=True): navigate_to("Veri Analizi")
+    
+    # Hero Section
+    if os.path.exists("banner.png"): st.image("banner.png", use_container_width=True)
+    else:
+        st.markdown(f'<div class="hero-card"><h1>LMS Yapay Zeka Pro</h1><p>Geleceğin Akıllı Eğitim Deneyimi</p></div>', unsafe_allow_html=True)
+    
+    # Stats Row
+    st.markdown("### Sistem Özeti")
+    sc1, sc2, sc3, sc4 = st.columns(4)
+    with sc1: st.markdown(f'<div class="stat-box"><div class="stat-val">{len(courses)}</div><div class="stat-lab">Aktif Ders</div></div>', unsafe_allow_html=True)
+    with sc2: st.markdown(f'<div class="stat-box"><div class="stat-val">{len(history)}</div><div class="stat-lab">AI Yanıtı</div></div>', unsafe_allow_html=True)
+    with sc3: st.markdown(f'<div class="stat-box"><div class="stat-val">15</div><div class="stat-lab">Öğrenci</div></div>', unsafe_allow_html=True)
+    with sc4: st.markdown(f'<div class="stat-box"><div class="stat-val">Stable</div><div class="stat-lab">Durum</div></div>', unsafe_allow_html=True)
+    
+    st.divider(); st.markdown("### Hizmet Paneli")
+    # Quick Navigation Cards
+    nc1, nc2, nc3 = st.columns(3)
+    with nc1:
+        st.markdown('<div class="nav-card"><h3>💬 Sohbet</h3><p style="font-size:0.8rem; opacity:0.7;">AI ile anında bilgi alın.</p></div>', unsafe_allow_html=True)
+        if st.button("AI Sohbet Paneli", use_container_width=True, key="nh_chat"): navigate_to("AI Sohbet")
+    with nc2:
+        st.markdown('<div class="nav-card"><h3>📝 Sınav</h3><p style="font-size:0.8rem; opacity:0.7;">Otomatik quizler hazırlayın.</p></div>', unsafe_allow_html=True)
+        if st.button("Hemen Quiz Hazırla", use_container_width=True, key="nh_quiz"): navigate_to("Quiz Hazirla")
+    with nc3:
+        st.markdown('<div class="nav-card"><h3>📊 Analiz</h3><p style="font-size:0.8rem; opacity:0.7;">Gerçek zamanlı başarı takibi.</p></div>', unsafe_allow_html=True)
+        if st.button("Verileri İncele", use_container_width=True, key="nh_ana"): navigate_to("Veri Analizi")
 
 elif st.session_state.page == "AI Sohbet":
     st.title("AI Eğitmen Asistanı")
@@ -139,9 +139,9 @@ elif st.session_state.page == "AI Sohbet":
 elif st.session_state.page == "Quiz Hazirla":
     st.title("Sınav Hazırlayıcı"); st.markdown('<div class="settings-card">', unsafe_allow_html=True)
     c1, c2 = st.columns([0.7, 0.3])
-    with c1: topic = st.text_input("Sınav Konusu")
+    with c1: topic = st.text_input("Sınav Başlığı")
     with c2: q_count = st.slider("Adet", 3, 20, 5)
-    if st.button("AI Sınav Oluştur", use_container_width=True, type="primary"):
+    if st.button("Sınav Oluştur", use_container_width=True, type="primary"):
         if topic:
             with st.spinner("AI Yanıtlıyor..."):
                 st.session_state.quiz_content = ai_service.ask(f"{topic} hakkında {q_count} soruluk test hazırla.", temp=st.session_state.ai_temp, tokens=st.session_state.ai_tokens)
@@ -150,45 +150,35 @@ elif st.session_state.page == "Quiz Hazirla":
     if st.session_state.quiz_content:
         st.markdown('<div class="settings-card">', unsafe_allow_html=True); st.markdown(st.session_state.quiz_content)
         cs1, cs2 = st.columns(2)
-        with cs1: st.download_button("PDF İndir", bytes(export_pdf(st.session_state.quiz_content, title=st.session_state.current_quiz_title)), file_name="sinav.pdf", use_container_width=True)
-        with cs2:
-            if st.button("Bu Sınavı 15 Öğrenciye Çözdür", use_container_width=True):
-                db_gen = get_db(); db = next(db_gen); core_simulate(db, subjects_override=st.session_state.current_quiz_title)
-                st.success("Sınav simüle edildi!"); st.balloons()
-        st.markdown('</div>', unsafe_allow_html=True)
+        if st.button("Simülasyon Başlat (15 Öğrenci)", use_container_width=True):
+            db_gen = get_db(); db = next(db_gen); core_simulate(db, subjects_override=st.session_state.current_quiz_title)
+            st.success("Bütün sınıf sınavı çözdü!"); st.balloons()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.page == "Ders Materyalleri":
     st.title("Ders Arşivi"); db_gen = get_db(); db = next(db_gen); courses = get_all_courses(db)
     if courses:
-        for c in courses:
-            with st.expander(c.title, expanded=st.session_state.course_expanded): st.markdown(f"**{c.description}**\n\n{c.content}")
+        for c in courses: 
+            with st.expander(c.title): st.markdown(f"**{c.description}**\n\n{c.content}")
     else:
-        st.warning("Ders bulunmuyor.")
-        if st.button("15 Örnek Branşı Hemen Yükle", type="primary", use_container_width=True):
-            if populate_demo_courses(db): st.success("15 profesyonel ders arşive eklendi!"); st.rerun()
+        if st.button("15 Örnek Branşı Hemen Yükle", type="primary", use_container_width=True): populate_demo_courses(db); st.rerun()
 
 elif st.session_state.page == "Veri Analizi":
-    st.title("Gelişmiş Veri Analizi"); db_gen = get_db(); db = next(db_gen); quiz_res = get_quiz_results(db); courses = get_all_courses(db)
+    st.title("Gelişmiş Analiz Paneli"); db_gen = get_db(); db = next(db_gen); quiz_res = get_quiz_results(db); courses = get_all_courses(db)
     t1, t2 = st.tabs(["Ders Başarı Göstergeleri", "Manuel Puan Girişi"])
     with t1:
-        st.subheader("Öğrenci Başarı Analizi")
         if quiz_res:
             res_df = pd.DataFrame([{"Öğrenci": r.student_name, "Puan": r.score, "Ders": r.quiz_title} for r in quiz_res])
             m1, m2, m3 = st.columns(3); m1.metric("Sınıf Ortalaması", round(res_df["Puan"].mean(), 1)); m2.metric("En Yüksek Puan", res_df["Puan"].max())
             last = res_df.iloc[0]; m3.metric("Son Girilen", f"{last['Puan']}", delta=f"{last['Öğrenci']} ({last['Ders']})")
-            if st.session_state.chart_type == "Bar": st.bar_chart(res_df.set_index("Öğrenci")["Puan"], color=accent)
-            elif st.session_state.chart_type == "Line": st.line_chart(res_df.set_index("Öğrenci")["Puan"], color=accent)
-            else: st.area_chart(res_df.set_index("Öğrenci")["Puan"], color=accent)
+            st.bar_chart(res_df.set_index("Öğrenci")["Puan"], color=accent)
             st.dataframe(res_df, use_container_width=True)
         else:
-            st.info("Kayıt yok.")
-            if st.button("Hemen 15 Branş İçin Simüle Et", use_container_width=True, type="primary"):
-                core_simulate(db); st.rerun()
+            if st.button("15 Branş Simülasyonu Başlat", use_container_width=True, type="primary"): core_simulate(db); st.rerun()
     with t2:
-        st.subheader("Yeni Not Girişi")
         with st.form("man_entry"):
             name = st.text_input("Öğrenci"); quiz = st.text_input("Ders"); score = st.number_input("Puan", 0, 100, 85)
-            if st.form_submit_button("Sisteme İşle"):
+            if st.form_submit_button("Sonucu Kaydet"): 
                 add_quiz_result(db, quiz, name, score); st.success("Kaydedildi!"); st.rerun()
 
 elif st.session_state.page == "Ayarlar":
@@ -208,8 +198,8 @@ elif st.session_state.page == "Ayarlar":
     with col_u2: st.session_state.ui_glass = st.slider("Cam Yoğunluğu", 0.0, 1.0, st.session_state.ui_glass, 0.1)
     st.markdown('</div>', unsafe_allow_html=True)
     if st.button("Ayarları Kalıcı Kaydet", type="primary", use_container_width=True):
-        save_settings_to_disk({'ui_accent': st.session_state.ui_accent, 'ai_temp': st.session_state.ai_temp, 'ai_tokens': st.session_state.ai_tokens, 'ai_system': st.session_state.ai_system, 'ui_glass': st.session_state.ui_glass, 'chart_type': st.session_state.chart_type, 'default_model': st.session_state.default_model, 'course_expanded': st.session_state.course_expanded, 'pdf_pagenums': st.session_state.pdf_pagenums})
-        st.success("Tüm ayarlar kaydedildi!"); st.balloons()
+        save_settings_to_disk({'ui_accent': st.session_state.ui_accent,'ai_temp': st.session_state.ai_temp,'ai_tokens': st.session_state.ai_tokens,'ai_system': st.session_state.ai_system,'ui_glass': st.session_state.ui_glass,'chart_type': st.session_state.chart_type,'default_model': st.session_state.default_model,'course_expanded': st.session_state.course_expanded,'pdf_pagenums': st.session_state.pdf_pagenums})
+        st.success("Ayarlar başarıyla kaydedildi!"); st.balloons()
     st.divider()
-    if st.button("Sistemi Sıfırla (Fabrika Ayarları)", use_container_width=True):
+    if st.button("Veritabanını Sıfırla (Fabrika Ayarları)", use_container_width=True):
         db_gen = get_db(); db = next(db_gen); from sqlalchemy import delete; from models import Course, ChatHistory, QuizResult; db.execute(delete(Course)); db.execute(delete(ChatHistory)); db.execute(delete(QuizResult)); db.commit(); st.rerun()

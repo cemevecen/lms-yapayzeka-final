@@ -6,18 +6,12 @@ Base = declarative_base()
 
 class User(Base):
     __tablename__ = 'users'
-    id = Column(Integer, primary_key=True)
-    username = Column(String(50), unique=True, nullable=False)
-    email = Column(String(100), unique=True, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    chats = relationship("ChatHistory", back_populates="user")
-
-class User(Base):
-    __tablename__ = 'users'
     __table_args__ = {'extend_existing': True}
     id = Column(Integer, primary_key=True)
-    username = Column(String(50), unique=True)
-    password = Column(String(50))
+    username = Column(String(50), unique=True, nullable=False)
+    password = Column(String(100), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    chats = relationship("ChatHistory", back_populates="user")
 
 class Course(Base):
     __tablename__ = 'courses'

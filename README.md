@@ -1,45 +1,61 @@
-# LMS Yapay Zeka Final Projesi 🎓
+# LMS Yapay Zeka Final
 
-Bu proje, modern bir Öğrenim Yönetim Sistemi (LMS) üzerine entegre edilmiş yapay zeka servislerini içermektedir. Google Gemini ve Groq (Llama 3) modellerini kullanarak öğrencilere ve eğitmenlere akıllı asistanlık sunar.
+Eğitim süreçlerini yapay zeka ile optimize eden, modern ve profesyonel bir Öğrenme Yönetim Sistemi (LMS). Bu platform, eğitimcilerin ve öğrencilerin ders içerikleri, sınav hazırlığı ve veri analizi süreçlerini tek bir merkezden yönetmelerini sağlar.
 
-## 🚀 Özellikler
-- **AI Sohbet:** Derslerle ilgili soruları yanıtlayan akıllı eğitmen asistanı.
-- **Model Seçimi:** Gemini veya Groq (Llama 8B) modelleri arasında seçim yapabilme.
-- **Ders Arşivi:** SQL tabanlı ders materyalleri yönetimi.
-- **Modern Arayüz:** Streamlit ile geliştirilmiş kolay kullanımlı dashboard.
-- **SQLite Entegrasyonu:** Tüm sohbet geçmişi ve ders verileri yerel veritabanında saklanır.
+## 🚀 Öne Çıkan Özellikler
 
-## 🛠 Proje Yapısı
-```
-lms-yapayzeka-final/
-├── app.py              # Ana Uygulama (Streamlit Arayüzü)
-├── ai_service.py       # LLM API Mantığı (Gemini & Groq Entegrasyonu)
-├── database.py         # SQLite & Veritabanı İşlemleri
-├── models.py           # Veri Modelleri ve Şemalar
-├── requirements.txt    # Gerekli Kütüphaneler
-├── .env                # API Anahtarları (Yerelde kullanım için)
-└── README.md           # Proje Tanımı ve Kurulum Notları
-```
+- **Akıllı Eğitmen Asistanı:** Gemini ve Groq (Llama 3.3) modelleri ile dersleriniz hakkında anlık etkileşime geçin.
+- **Üretken Sınav Hazırlayıcı:** Belirlediğiniz herhangi bir konuda saniyeler içinde çoktan seçmeli sınavlar ve testler oluşturun.
+- **Gelişmiş Ders Arşivi:** Ders materyallerini ekleyin, düzenleyin ve kategorize edilmiş bir şekilde listeleyin.
+- **Profesyonel Raporlama:** Tüm ders içeriğini ve hazırlanan sınavları tek tıkla **PDF** veya **Excel** formatında dışa aktarın.
+- **Eğitim Veri Analizi:** Öğrenci katılımı ve AI yanıt başarısı gibi metrikleri yapay zeka destekli grafiklerle takip edin.
+- **Premium UI/UX:** Emojisiz, kurumsal, tema duyarlı (dark/light mode) ve modern bir kullanıcı arayüzü.
 
-## 📦 Kurulum
-1. Gerekli kütüphaneleri yükleyin:
+## 🛠 Teknik Altyapı
+
+- **Front-end / Framework:** [Streamlit](https://streamlit.io/)
+- **Veritabanı:** SQLite & [SQLAlchemy ORM](https://www.sqlalchemy.org/)
+- **Yapay Zeka (LLM):** Google Gemini API & Groq API
+- **Raporlama:** fpdf2 (PDF) & Pandas/OpenPyXL (Excel)
+- **Tasarım:** Custom CSS (Glassmorphism & Modern Typography)
+
+## 📦 Kurulum ve Kullanım
+
+### Yerel Çalıştırma
+
+1. Projeyi klonlayın:
+   ```bash
+   git clone https://github.com/cemevecen/lms-yapayzeka-final.git
+   cd lms-yapayzeka-final
+   ```
+
+2. Bağımlılıkları yükleyin:
    ```bash
    pip install -r requirements.txt
    ```
-2. `.env` dosyasını düzenleyerek API anahtarlarınızı ekleyin:
-   - `GEMINI_API_KEY`: [Google AI Studio](https://aistudio.google.com/app/apikey)
-   - `GROQ_API_KEY`: [Groq Console](https://console.groq.com/keys)
 
-3. Uygulamayı başlatın:
+3. `.env` dosyasını oluşturun ve API anahtarlarınızı ekleyin:
+   ```env
+   GEMINI_API_KEY=your_gemini_key
+   GROQ_API_KEY=your_groq_key
+   ```
+
+4. Uygulamayı başlatın:
    ```bash
    streamlit run app.py
    ```
 
-## 💻 Kullanım
-- Sol menüden **Ana Sayfa**'yı görüntüleyebilir, **AI Sohbet** ile konuşmaya başlayabilir veya **Ders Materyalleri** sekmesinden yeni dersler ekleyebilirsiniz.
-- Sohbet geçmişi otomatik olarak kaydedilir.
-- Ayarlar sekmesinden API durumlarını kontrol edebilirsiniz.
+### Streamlit Cloud Deployment
 
-## 📝 Notlar
-- Proje eğitim amaçlıdır ve modüler yapısı sayesinde kolayca geliştirilebilir.
-- API anahtarlarınızı asla GitHub'a yüklemeyin (`.env` dosyası .gitignore'da olmalıdır).
+1. Projeyi GitHub'a yükleyin.
+2. [Streamlit Cloud](https://share.streamlit.io/) sitesine gidin ve projenizi bağlayın.
+3. **Advanced Settings > Secrets** kısmına API anahtarlarınızı ekleyin.
+
+## 🛡 Veri Yönetimi
+
+Uygulamanın **Ayarlar** sekmesinden tüm veritabanını tek tıkla sıfırlayabilir veya platformu test etmek için **"Temiz Örnek Veri"** yüklemesi yapabilirsiniz.
+
+---
+**Versiyon:** v1.0.1  
+**Durum:** Kararlı (Stable)  
+**Tasarım Dili:** Kurumsal / Emoji-Free

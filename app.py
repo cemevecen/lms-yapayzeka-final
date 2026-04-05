@@ -12,6 +12,11 @@ from fpdf import FPDF
 ADMIN_USER = "admin"
 ADMIN_PASSWORD = "admin"
 
+TEST_LOGIN_HELP = """test girişi
+
+isim: admin
+şifre: admin"""
+
 def _admin_credentials():
     """Varsayılan admin/admin; Streamlit Cloud Secrets ile override edilebilir."""
     try:
@@ -58,7 +63,7 @@ if not st.session_state.admin_authenticated:
         st.title("AI-LMS Pro")
         st.divider()
         st.subheader("Yönetici")
-        st.caption("Yönetici bilgilerinizle giriş yapın.")
+        st.markdown(f"```\n{TEST_LOGIN_HELP}\n```")
         with st.form("admin_login"):
             u = st.text_input("Kullanıcı adı", key="login_user")
             pw = st.text_input("Şifre", type="password", key="login_pass")
@@ -69,7 +74,8 @@ if not st.session_state.admin_authenticated:
                 else:
                     st.error("Kullanıcı adı veya şifre hatalı.")
     st.markdown("# LMS Yapay Zeka Pro")
-    st.info("Soldaki **Yönetici** bölümünden giriş yapın; girişten sonra **Navigasyon** görünür.")
+    st.markdown(f"```\n{TEST_LOGIN_HELP}\n```")
+    st.caption("Soldaki panelden yukarıdaki bilgilerle giriş yapın; ardından Navigasyon görünür.")
     st.stop()
 
 init_db()

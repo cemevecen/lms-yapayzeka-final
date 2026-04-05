@@ -90,9 +90,6 @@ with st.sidebar:
 
 # --- PAGE: HOME ---
 if selected_page == "🏠 Ana Sayfa":
-    # Hero Section with Banner
-    st.image("assets/banner.png", use_container_width=True)
-    
     st.markdown("""
     <div style="text-align: center; padding: 20px 0;">
         <h1 style="font-size: 3rem; margin-bottom: 0;">LMS Yapay Zeka Final</h1>

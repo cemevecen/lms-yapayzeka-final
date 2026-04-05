@@ -14,12 +14,14 @@ class User(Base):
 
 class User(Base):
     __tablename__ = 'users'
+    __table_args__ = {'extend_existing': True}
     id = Column(Integer, primary_key=True)
     username = Column(String(50), unique=True)
     password = Column(String(50))
 
 class Course(Base):
     __tablename__ = 'courses'
+    __table_args__ = {'extend_existing': True}
     id = Column(Integer, primary_key=True)
     title = Column(String(200), nullable=False)
     description = Column(Text)
@@ -28,6 +30,7 @@ class Course(Base):
 
 class ChatHistory(Base):
     __tablename__ = 'chat_histories'
+    __table_args__ = {'extend_existing': True}
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'))
     role = Column(String(20), nullable=False) # 'user' or 'assistant'
@@ -38,6 +41,7 @@ class ChatHistory(Base):
 
 class QuizResult(Base):
     __tablename__ = 'quiz_results'
+    __table_args__ = {'extend_existing': True}
     id = Column(Integer, primary_key=True)
     quiz_title = Column(String(200))
     student_name = Column(String(100))

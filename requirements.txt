@@ -6,3 +6,4 @@ google-generativeai
 groq
 fpdf2
 openpyxl
+xhtml2pdf

@@ -4,15 +4,6 @@ from datetime import datetime
 
 Base = declarative_base()
 
-class User(Base):
-    __tablename__ = 'users'
-    __table_args__ = {'extend_existing': True}
-    id = Column(Integer, primary_key=True)
-    username = Column(String(50), unique=True, nullable=False)
-    password = Column(String(100), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    chats = relationship("ChatHistory", back_populates="user")
-
 class Course(Base):
     __tablename__ = 'courses'
     __table_args__ = {'extend_existing': True}
@@ -26,12 +17,11 @@ class ChatHistory(Base):
     __tablename__ = 'chat_histories'
     __table_args__ = {'extend_existing': True}
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'))
+    user_id = Column(Integer)
     role = Column(String(20), nullable=False) # 'user' or 'assistant'
     message = Column(Text, nullable=False)
     model_name = Column(String(50))
     timestamp = Column(DateTime, default=datetime.utcnow)
-    user = relationship("User", back_populates="chats")
 
 class QuizResult(Base):
     __tablename__ = 'quiz_results'

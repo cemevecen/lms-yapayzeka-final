@@ -67,7 +67,7 @@ def export_excel(courses):
     return output.getvalue()
 
 def export_pdf(content, title="Rapor"):
-    if pisa is None: raise ImportError("PDF motoru yukleniyor, bekleyin.")
+    if pisa is None: return None
     html = f"<html><head><meta charset='UTF-8'><style>body {{ font-family: Helvetica, Arial, sans-serif; padding: 30px; }} h1 {{ color: #1f77b4; text-align: center; }} .content {{ line-height: 1.6; font-size: 12px; white-space: pre-wrap; }}</style></head><body><h1>{title}</h1><hr><div class='content'>{content}</div></body></html>"
     result = io.BytesIO()
     pisa.CreatePDF(io.BytesIO(html.encode("UTF-8")), dest=result, encoding='UTF-8')
@@ -115,34 +115,23 @@ elif st.session_state.page == "AI Sohbet":
 # --- PAGE: QUIZ ---
 elif st.session_state.page == "Quiz Hazirla":
     st.title("AI Sinav Hazirlayici")
-    st.caption("Yapay zeka ile diledigin konuda aninda sınav veya test hazırlayın.")
-    
     st.markdown('<div class="settings-card">', unsafe_allow_html=True)
     col1, col2 = st.columns([0.7, 0.3])
-    with col1:
-        topic = st.text_input("Sinav Konusu veya Ders Basligi", placeholder="Ornegin: Osmanli Yukselme Donemi veya Fotosentez")
-    with col2:
-        q_count = st.slider("Soru Sayisi", 3, 15, 5)
-    
-    provider = st.selectbox("AI Modeli Secin", ["Groq", "Gemini"])
-    
+    with col1: topic = st.text_input("Konu", placeholder="Ör: Fotosentez")
+    with col2: q_count = st.slider("Adet", 3, 15, 5)
+    provider = st.selectbox("Model", ["Groq", "Gemini"])
     if st.button("Sinavi Olustur", use_container_width=True, type="primary"):
         if topic:
             with st.spinner("Sorular hazirlaniyor..."):
-                prompt = f"{topic} konusu hakkinda {q_count} adet coktan secmeli soru iceren bir sinav hazirla. Her sorunun A,B,C,D secenekleri ve sonunda cevap anahtari olsun. Dil: Turkce."
-                st.session_state.quiz_content = ai_service.ask(prompt, provider=provider.lower())
-        else:
-            st.error("Lutfen bir konu girin.")
+                st.session_state.quiz_content = ai_service.ask(f"{topic} konusu hakkinda {q_count} adet coktan secmeli soru iceren bir sinav hazirla. Secenekler ve cevaplar olsun. Turkce.", provider=provider.lower())
+        else: st.error("Bir konu girin.")
     st.markdown('</div>', unsafe_allow_html=True)
-    
     if st.session_state.quiz_content:
-        st.markdown('<div class="settings-card">', unsafe_allow_html=True)
-        st.subheader("Hazirlanan Sinav")
-        st.markdown(st.session_state.quiz_content)
-        
-        # Download as PDF
-        pdf_ready = export_pdf(st.session_state.quiz_content, title=f"SINAV: {topic.upper()}")
-        st.download_button("Sinavi PDF Olarak Indir", pdf_ready, file_name=f"sinav_{datetime.now().strftime('%d%m%y')}.pdf", mime="application/pdf", use_container_width=True)
+        st.markdown('<div class="settings-card">', unsafe_allow_html=True); st.markdown(st.session_state.quiz_content)
+        if pisa:
+            pdf = export_pdf(st.session_state.quiz_content, title=f"SINAV: {topic.upper()}")
+            st.download_button("PDF İndir", pdf, file_name=f"sinav.pdf", mime="application/pdf", use_container_width=True)
+        else: st.warning("PDF motoru kuruluyor, bekleyin...")
         st.markdown('</div>', unsafe_allow_html=True)
 
 # --- PAGE: COURSES ---
@@ -151,12 +140,28 @@ elif st.session_state.page == "Ders Materyalleri":
     with tab1:
         courses = get_all_courses(db)
         if courses:
+            st.markdown('<div class="settings-card" style="padding:15px; margin-bottom:20px;">', unsafe_allow_html=True)
+            ec1, ec2 = st.columns(2)
+            with ec1:
+                excel = export_excel(courses); st.download_button("Excel İndir", excel, "dersler.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+            with ec2:
+                if pisa:
+                    # Create a consolidated string for the reports
+                    pdf_content = "\n\n".join([f"**{c.title}**\n{c.description}\n{c.content}" for c in courses])
+                    pdf = export_pdf(pdf_content, title="Ders Arşivi"); st.download_button("PDF İndir", pdf, "dersler.pdf", "application/pdf", key="pdf_dl_fixed", use_container_width=True)
+                else: st.warning("PDF motoru yukleniyor, bekleyin...")
+            st.markdown('</div>', unsafe_allow_html=True)
             for c in courses:
-                exp_col, del_col = st.columns([0.9, 0.1])
-                with exp_col: 
+                col_exp, col_del = st.columns([0.9, 0.1])
+                with col_exp: 
                     with st.expander(c.title): st.write(c.content)
-                with del_col:
+                with col_del:
                     if st.button("Sil", key=f"d_{c.id}", type="primary"): delete_course(db, c.id); st.rerun()
+        else: st.warning("Ders bulunmuyor.")
+    with tab2:
+        with st.form("new_c"):
+            t = st.text_input("Başlık"); d = st.text_area("Açıklama"); c = st.text_area("İçerik"); sub = st.form_submit_button("Kaydet")
+            if sub and t and c: add_sample_course(db, t, d, c); st.success("Eklendi!"); st.rerun()
 
 # --- PAGE: VERI ANALIZI ---
 elif st.session_state.page == "Veri Analizi":
@@ -164,6 +169,6 @@ elif st.session_state.page == "Veri Analizi":
 
 # --- PAGE: SETTINGS ---
 elif st.session_state.page == "Ayarlar":
-    st.title("Sistem Yonetimi")
-    if st.button("Veritabanini Sifirla", type="primary"):
+    st.title("Ayarlar")
+    if st.button("Tüm Verileri Sıfırla", type="primary"):
         db_gen = get_db(); db = next(db_gen); from sqlalchemy import delete; from models import Course, ChatHistory; db.execute(delete(Course)); db.execute(delete(ChatHistory)); db.commit(); st.rerun()

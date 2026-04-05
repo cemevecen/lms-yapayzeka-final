@@ -6,6 +6,7 @@ from ai_service import ai_service
 import os
 import io
 import json
+import html
 from datetime import datetime
 from fpdf import FPDF
 
@@ -166,14 +167,184 @@ st.markdown(f"""
         line-height: 1.55;
         color: rgba(226,232,240,0.9);
     }}
-    .dash-section {{
-        background: var(--secondary-background-color);
-        border: 1px solid var(--divider-color);
-        border-radius: 16px;
-        padding: 1.1rem 1.15rem 1.15rem;
-        margin-bottom: 0.85rem;
+    .section-heading {{
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        margin: 0.25rem 0 1rem;
+        font-size: 1.15rem;
+        font-weight: 720;
+        letter-spacing: -0.02em;
+        color: var(--text-color, inherit);
     }}
-    .dash-section h4 {{ margin: 0 0 0.65rem; font-size: 0.95rem; font-weight: 650; }}
+    .section-heading::before {{
+        content: "";
+        width: 4px;
+        height: 1.15em;
+        border-radius: 4px;
+        background: linear-gradient(180deg, {accent}, color-mix(in srgb, {accent} 40%, transparent));
+        flex-shrink: 0;
+    }}
+    .metrics-foot {{
+        display: inline-flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+        margin: 0.35rem 0 1.25rem;
+        padding: 0.55rem 0.85rem;
+        border-radius: 12px;
+        font-size: 0.88rem;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.07);
+    }}
+    [data-testid="stMetric"] {{
+        background: linear-gradient(155deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 100%) !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+        border-radius: 16px !important;
+        padding: 1rem 1.05rem 0.95rem !important;
+        box-shadow:
+            0 1px 0 rgba(255,255,255,0.06) inset,
+            0 12px 40px -12px rgba(0,0,0,0.45);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }}
+    [data-testid="stMetric"]:hover {{
+        transform: translateY(-2px);
+        border-color: color-mix(in srgb, {accent} 45%, rgba(255,255,255,0.1)) !important;
+        box-shadow:
+            0 1px 0 rgba(255,255,255,0.08) inset,
+            0 16px 36px -10px rgba(0,0,0,0.5);
+    }}
+    [data-testid="stMetric"] label {{
+        font-size: 0.78rem !important;
+        opacity: 0.88;
+    }}
+    [data-testid="stMetric"] [data-testid="stMetricValue"] {{
+        font-size: 1.65rem !important;
+        font-weight: 750 !important;
+    }}
+    .dash-card {{
+        position: relative;
+        border-radius: 18px;
+        padding: 0;
+        margin-bottom: 0.5rem;
+        overflow: hidden;
+        background: linear-gradient(165deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow:
+            0 1px 0 rgba(255,255,255,0.05) inset,
+            0 18px 50px -20px rgba(0,0,0,0.55);
+    }}
+    .dash-card::before {{
+        content: "";
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, {accent}, transparent);
+        opacity: 0.85;
+    }}
+    .dash-card-head {{
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem 1.15rem 0.35rem;
+    }}
+    .dash-card-head h4 {{
+        margin: 0;
+        font-size: 0.98rem;
+        font-weight: 680;
+        letter-spacing: -0.02em;
+    }}
+    .dash-card-icon {{
+        font-size: 1.15rem;
+        opacity: 0.9;
+    }}
+    .dash-card-body {{
+        padding: 0.25rem 1rem 1.1rem 1.15rem;
+    }}
+    .dash-card-body .stChart, .dash-card-body [data-testid="stVegaLiteChart"] {{
+        border-radius: 12px;
+    }}
+    .dash-card-table .dash-card-body {{
+        padding-top: 0.15rem;
+    }}
+    .dash-chat-list {{
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+    }}
+    .dash-chat-row {{
+        margin: 0;
+        padding: 0.75rem 0.9rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.08);
+        font-size: 0.92rem;
+        line-height: 1.45;
+    }}
+    .dash-chat-row--user {{
+        background: rgba(255,255,255,0.04);
+        border-left: 3px solid {accent};
+    }}
+    .dash-chat-row--ai {{
+        background: rgba(255,255,255,0.025);
+        border-left: 3px solid rgba(148, 163, 184, 0.65);
+    }}
+    .dash-chat-role {{
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        opacity: 0.75;
+        margin-bottom: 0.35rem;
+    }}
+    .nav-card {{
+        background: linear-gradient(165deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%) !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+        box-shadow: 0 12px 32px -16px rgba(0,0,0,0.4);
+        padding: 22px !important;
+    }}
+    .nav-card:hover {{
+        transform: translateY(-6px);
+        border-color: color-mix(in srgb, {accent} 50%, rgba(255,255,255,0.1)) !important;
+        box-shadow: 0 20px 40px -12px rgba(0,0,0,0.35);
+    }}
+    @media (max-width: 1100px) {{
+        .block-container {{ padding-left: 1.1rem !important; padding-right: 1.1rem !important; }}
+    }}
+    @media (max-width: 768px) {{
+        [data-testid="stMetric"] {{ min-height: 5.5rem; }}
+        .home-hero {{ padding: 1.65rem 1.25rem !important; min-height: 180px !important; }}
+        .section-heading {{ font-size: 1.05rem; }}
+    }}
+    main [data-testid="stVerticalBlockBorderWrapper"] {{
+        position: relative;
+        border-radius: 18px !important;
+        border: 1px solid rgba(255,255,255,0.11) !important;
+        background: linear-gradient(168deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 100%) !important;
+        box-shadow:
+            0 1px 0 rgba(255,255,255,0.05) inset,
+            0 18px 48px -22px rgba(0,0,0,0.55) !important;
+        padding: 0.85rem 1rem 1rem !important;
+    }}
+    main [data-testid="stVerticalBlockBorderWrapper"]::before {{
+        content: "";
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        border-radius: 18px 18px 0 0;
+        background: linear-gradient(90deg, transparent, {accent}, transparent);
+        opacity: 0.88;
+        pointer-events: none;
+    }}
+    .dash-native-head {{
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin: 0 0 0.65rem;
+        font-size: 0.98rem;
+        font-weight: 680;
+        letter-spacing: -0.02em;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -218,7 +389,7 @@ if st.session_state.page == "Ana Sayfa":
 </div>
 """, unsafe_allow_html=True)
 
-    st.markdown("### Özet metrikler")
+    st.markdown('<p class="section-heading">Özet metrikler</p>', unsafe_allow_html=True)
     r1, r2, r3, r4, r5 = st.columns(5)
     r1.metric("Kayıtlı ders", n_courses, help="Ders materyalleri arşivindeki kayıt sayısı")
     r2.metric("Kullanıcı mesajı", n_user_msgs, help="AI sohbetinde gönderilen mesaj adedi")
@@ -226,55 +397,81 @@ if st.session_state.page == "Ana Sayfa":
     r4.metric("Sınav kayıtları", n_quiz_rows, help="Veritabanındaki sınav sonucu satırı")
     r5.metric("Ortalama puan", f"{avg_score}" if avg_score is not None else "—", help="Tüm sınav sonuçlarının ortalaması")
 
-    st.caption(f"Varsayılan AI modeli: **{default_ai}** · Sohbet toplam mesaj: **{len(history)}**")
+    st.markdown(
+        f'<div class="metrics-foot">Varsayılan AI modeli: <strong>{html.escape(default_ai)}</strong>'
+        f' · Sohbet toplam mesaj: <strong>{len(history)}</strong></div>',
+        unsafe_allow_html=True,
+    )
 
-    st.markdown("### Görünümler")
+    st.markdown('<p class="section-heading">Görünümler</p>', unsafe_allow_html=True)
     g1, g2 = st.columns(2)
     with g1:
-        st.markdown('<div class="dash-section"><h4>Son sınav puanları</h4>', unsafe_allow_html=True)
-        if quiz_res:
-            take = quiz_res[:18]
-            chart_df = pd.DataFrame({
-                "Kayıt": [f"{i+1}" for i in range(len(take))],
-                "Puan": [r.score for r in take],
-            }).set_index("Kayıt")
-            st.bar_chart(chart_df, color=accent)
-        else:
-            st.caption("Henüz sınav sonucu yok. Quiz veya Veri Analizi ile kayıt ekleyin.")
-        st.markdown("</div>", unsafe_allow_html=True)
-    with g2:
-        st.markdown('<div class="dash-section"><h4>Son sınav kayıtları</h4>', unsafe_allow_html=True)
-        if quiz_res:
-            tail = quiz_res[:8]
-            st.dataframe(
-                pd.DataFrame([{
-                    "Ders": r.quiz_title[:40] + ("…" if len(r.quiz_title) > 40 else ""),
-                    "Öğrenci": r.student_name,
-                    "Puan": r.score,
-                } for r in tail]),
-                use_container_width=True,
-                hide_index=True,
+        with st.container(border=True):
+            st.markdown(
+                '<div class="dash-native-head"><span aria-hidden="true">▦</span> Son sınav puanları</div>',
+                unsafe_allow_html=True,
             )
-        else:
-            st.caption("Gösterilecek kayıt yok.")
-        st.markdown("</div>", unsafe_allow_html=True)
+            if quiz_res:
+                take = quiz_res[:18]
+                chart_df = pd.DataFrame({
+                    "Kayıt": [f"{i+1}" for i in range(len(take))],
+                    "Puan": [r.score for r in take],
+                }).set_index("Kayıt")
+                st.bar_chart(chart_df, color=accent)
+            else:
+                st.caption("Henüz sınav sonucu yok. Quiz veya Veri Analizi ile kayıt ekleyin.")
+    with g2:
+        with st.container(border=True):
+            st.markdown(
+                '<div class="dash-native-head"><span aria-hidden="true">☰</span> Son sınav kayıtları</div>',
+                unsafe_allow_html=True,
+            )
+            if quiz_res:
+                tail = quiz_res[:8]
+                st.dataframe(
+                    pd.DataFrame([{
+                        "Ders": r.quiz_title[:40] + ("…" if len(r.quiz_title) > 40 else ""),
+                        "Öğrenci": r.student_name,
+                        "Puan": r.score,
+                    } for r in tail]),
+                    use_container_width=True,
+                    hide_index=True,
+                )
+            else:
+                st.caption("Gösterilecek kayıt yok.")
 
-    st.markdown("### Son sohbet (özet)")
-    st.markdown('<div class="dash-section"><h4>İlk mesaj önizlemeleri</h4>', unsafe_allow_html=True)
+    st.markdown('<p class="section-heading">Son sohbet (özet)</p>', unsafe_allow_html=True)
     tail_chat = history[-6:]
     if tail_chat:
+        parts = [
+            '<div class="dash-card"><div class="dash-card-head">'
+            '<span class="dash-card-icon" aria-hidden="true">💬</span><h4>Son mesaj önizlemeleri</h4></div>'
+            '<div class="dash-card-body"><div class="dash-chat-list">'
+        ]
         for h in tail_chat:
-            role = "Siz" if h.role == "user" else "AI"
+            is_user = h.role == "user"
+            role = "Siz" if is_user else "AI"
             preview = h.message.replace("\n", " ")
             if len(preview) > 140:
                 preview = preview[:140] + "…"
-            st.markdown(f"**{role}** · {preview}")
+            cls = "dash-chat-row--user" if is_user else "dash-chat-row--ai"
+            safe = html.escape(preview)
+            parts.append(
+                f'<div class="dash-chat-row {cls}"><span class="dash-chat-role">{html.escape(role)}</span>{safe}</div>'
+            )
+        parts.append("</div></div></div>")
+        st.markdown("".join(parts), unsafe_allow_html=True)
     else:
-        st.caption("Henüz sohbet geçmişi yok. AI Sohbet sayfasından başlayın.")
-    st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown(
+            '<div class="dash-card"><div class="dash-card-head">'
+            '<span class="dash-card-icon" aria-hidden="true">💬</span><h4>Son mesaj önizlemeleri</h4></div>'
+            '<div class="dash-card-body"><p style="opacity:0.8;margin:0;">Henüz sohbet geçmişi yok. '
+            "AI Sohbet sayfasından başlayın.</p></div></div>",
+            unsafe_allow_html=True,
+        )
 
     st.divider()
-    st.markdown("### Hızlı erişim")
+    st.markdown('<p class="section-heading">Hızlı erişim</p>', unsafe_allow_html=True)
     nc1, nc2, nc3, nc4 = st.columns(4)
     with nc1:
         st.markdown('<div class="nav-card"><h3>AI Sohbet</h3><p style="opacity:0.7;">Model ile mesajlaşın.</p></div>', unsafe_allow_html=True)

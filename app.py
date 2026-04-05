@@ -19,8 +19,10 @@ st.set_page_config(
 if 'page' not in st.session_state:
     st.session_state.page = "Ana Sayfa"
 
-def navigate_to(page):
-    st.session_state.page = page
+def navigate_to(page_name):
+    st.session_state.page = page_name
+    # Sync the radio widget by proxying its state key
+    st.session_state.nav_radio = page_name
     st.rerun()
 
 # Initialize Database
@@ -60,14 +62,21 @@ pages = ["Ana Sayfa", "AI Sohbet", "Ders Materyalleri", "Veri Analizi", "Ayarlar
 with st.sidebar:
     st.title("AI-LMS Dashboard")
     st.divider()
-    current_index = pages.index(st.session_state.page)
-    selected_page = st.sidebar.radio("Navigasyon", pages, index=current_index, key="nav_radio")
+    
+    # Use session_state directly for the radio index
+    selected_page = st.radio(
+        "Navigasyon", 
+        pages, 
+        key="nav_radio"
+    )
+    
+    # When radio changes, update st.session_state.page
     if selected_page != st.session_state.page:
         st.session_state.page = selected_page
-        st.rerun()
+    
     st.divider()
 
-# --- HELPERS: EXPORT ---
+# --- HELPERS ---
 def export_excel(courses):
     df = pd.DataFrame([{"Baslik": c.title, "Aciklama": c.description, "Icerik": c.content} for c in courses])
     output = io.BytesIO()
@@ -104,13 +113,13 @@ if st.session_state.page == "Ana Sayfa":
     fcol1, fcol2, fcol3 = st.columns(3)
     with fcol1:
         st.markdown('<div class="feature-card"><h4>Akıllı Sohbet</h4><p style="font-size:0.9rem; opacity:0.8;">Gemini ve Groq ile anlık soru-cevap asistanlığı.</p></div>', unsafe_allow_html=True)
-        if st.button("Sohbete Basla", use_container_width=True, key="go_chat"): navigate_to("AI Sohbet")
+        if st.button("Sohbete Basla", use_container_width=True, key="btn_chat"): navigate_to("AI Sohbet")
     with fcol2:
         st.markdown('<div class="feature-card"><h4>İçerik Üretimi</h4><p style="font-size:0.9rem; opacity:0.8;">Ders materyallerini yönetin ve AI ile içerik oluşturun.</p></div>', unsafe_allow_html=True)
-        if st.button("Derslere Git", use_container_width=True, key="go_courses"): navigate_to("Ders Materyalleri")
+        if st.button("Derslere Git", use_container_width=True, key="btn_courses"): navigate_to("Ders Materyalleri")
     with fcol3:
         st.markdown('<div class="feature-card"><h4>Veri Analizi</h4><p style="font-size:0.9rem; opacity:0.8;">Eğitim performansınızı grafiklerle takip edin.</p></div>', unsafe_allow_html=True)
-        if st.button("Analizi Gor", use_container_width=True, key="go_analysis"): navigate_to("Veri Analizi")
+        if st.button("Analizi Gor", use_container_width=True, key="btn_analysis"): navigate_to("Veri Analizi")
 
 # --- PAGE: AI CHAT ---
 elif st.session_state.page == "AI Sohbet":
@@ -156,7 +165,6 @@ elif st.session_state.page == "Ders Materyalleri":
         if not courses:
             st.warning("Henüz kayıtlı ders bulunmamaktadır.")
         else:
-            # Export Buttons
             st.markdown('<div class="settings-card" style="padding:15px; margin-bottom:20px;">', unsafe_allow_html=True)
             st.write("**Dersleri Disa Aktar (Export)**")
             ecol1, ecol2 = st.columns(2)
@@ -170,7 +178,6 @@ elif st.session_state.page == "Ders Materyalleri":
                 except Exception as e:
                     st.error(f"PDF Olusturma Hatasi: {str(e)}")
             st.markdown('</div>', unsafe_allow_html=True)
-            
             for course in courses:
                 col_exp, col_del = st.columns([0.85, 0.15])
                 with col_exp:
@@ -179,11 +186,6 @@ elif st.session_state.page == "Ders Materyalleri":
                 with col_del:
                     if st.button("Sil", key=f"del_{course.id}", type="primary", use_container_width=True):
                         delete_course(db, course.id); st.rerun()
-    with tab2:
-        with st.form("new_course"):
-            title = st.text_input("Ders Başlığı"); desc = st.text_area("Kısa Açıklama"); content = st.text_area("Ders İçeriği"); submit = st.form_submit_button("Dersi Kaydet")
-            if submit and title and content:
-                add_sample_course(db, title, desc, content); st.success("Ders başarıyla eklendi!"); st.rerun()
 
 # --- PAGE: VERI ANALIZI ---
 elif st.session_state.page == "Veri Analizi":
